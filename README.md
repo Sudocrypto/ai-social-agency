@@ -70,6 +70,19 @@ darüber hinausgehende Clips werden übersprungen und im Plan vermerkt. Modell
 wählbar via `video_modell` (`veo-3.1` / `seedance-2.0-fast` / `kling-3.0`),
 Clip-Länge via `max_clip_sekunden`.
 
+## Tests
+
+Offline-Regressionssuite (gestubbtes LLM, kein API-Key nötig):
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Deckt ab: Modell-Routing (Opus/Sonnet), Plattform-Split, SEO-Parsing in
+`meta.json`, Video-Prompt-Parsing + Kosten-Cap und die komplette
+Output-Struktur.
+
 ## Architektur
 
 Transparente, sequenzielle Pipeline (`agency/pipeline.py`) – kein Blackbox-
