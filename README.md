@@ -33,6 +33,7 @@ python run.py --pillar auswandern --render-video      # echte fal.ai-Clips (Phas
 | `--topic` | konkretes Thema (überschreibt die Pillar-Ableitung) |
 | `--no-websearch` | Live-Websuche des Trend-Scouts aus |
 | `--render-video` | echtes Video-Rendering statt Dry-Run (braucht `FAL_KEY`) |
+| `--parallel` | unabhängige Agents parallel ausführen (schneller); Default sequenziell/debugbar |
 
 Konfiguration (Marke, Modelle, Video-Modus, Kosten-Cap): **`brand_config.yaml`**.
 
@@ -85,7 +86,10 @@ Output-Struktur.
 
 ## Architektur
 
-Transparente, sequenzielle Pipeline (`agency/pipeline.py`) – kein Blackbox-
-Framework. Jeder Agent ist ein eigenes Modul unter `agency/agents/` mit eigenem
-System-Prompt und klarer Rolle. Der `RunContext` (`agency/context.py`) trägt alle
-Zwischenergebnisse und das Kosten-Log durch die Pipeline.
+Transparente Pipeline (`agency/pipeline.py`) – kein Blackbox-Framework. Jeder
+Agent ist ein eigenes Modul unter `agency/agents/` mit eigenem System-Prompt und
+klarer Rolle. Der `RunContext` (`agency/context.py`) trägt alle Zwischenergebnisse
+und das Kosten-Log durch die Pipeline. Standard ist sequenzielle Ausführung
+(maximal debugbar); mit `--parallel` laufen unabhängige Agents je Abhängigkeits-
+Ebene (`agency/graph.py`) gleichzeitig – Ergebnis identisch. CI (`.github/
+workflows/ci.yml`) führt die Testsuite bei jedem Push aus.

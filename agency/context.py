@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -33,22 +34,27 @@ class RunContext:
     # Rendern echte fal.ai-Clips? Default: nein (Dry-Run).
     render_video: bool = False
 
+    # Schützt Mutationen bei paralleler Ausführung (opt-in).
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+
     def set(self, agent_key: str, value: object) -> None:
-        self.outputs[agent_key] = value
+        with self._lock:
+            self.outputs[agent_key] = value
 
     def get(self, agent_key: str, default: object = None) -> object:
         return self.outputs.get(agent_key, default)
 
     def record_cost(self, agent_key: str, model: str, in_tok: int, out_tok: int, cost: float) -> None:
-        self.cost_log.append(
-            {
-                "agent": agent_key,
-                "model": model,
-                "input_tokens": in_tok,
-                "output_tokens": out_tok,
-                "cost_usd": round(cost, 5),
-            }
-        )
+        with self._lock:
+            self.cost_log.append(
+                {
+                    "agent": agent_key,
+                    "model": model,
+                    "input_tokens": in_tok,
+                    "output_tokens": out_tok,
+                    "cost_usd": round(cost, 5),
+                }
+            )
 
     @property
     def total_cost_usd(self) -> float:
@@ -58,16 +64,17 @@ class RunContext:
         self, plattform: str, clip: int, sekunden: int, modell: str,
         kosten_eur: float, gerendert: bool,
     ) -> None:
-        self.video_log.append(
-            {
-                "plattform": plattform,
-                "clip": clip,
-                "sekunden": sekunden,
-                "modell": modell,
-                "kosten_eur": round(kosten_eur, 4),
-                "gerendert": gerendert,
-            }
-        )
+        with self._lock:
+            self.video_log.append(
+                {
+                    "plattform": plattform,
+                    "clip": clip,
+                    "sekunden": sekunden,
+                    "modell": modell,
+                    "kosten_eur": round(kosten_eur, 4),
+                    "gerendert": gerendert,
+                }
+            )
 
     @property
     def total_video_cost_eur(self) -> float:

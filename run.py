@@ -61,12 +61,15 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Live-Websuche (Trend-Scout) abschalten (kostenloser Testlauf).")
     parser.add_argument("--render-video", action="store_true",
                         help="Echte fal.ai-Clips rendern (Phase 3). Ohne Flag: Dry-Run.")
+    parser.add_argument("--parallel", action="store_true",
+                        help="Unabhängige Agents parallel ausführen (schneller). "
+                             "Default: sequenziell (maximal debugbar).")
     parser.add_argument("--config", default=None,
                         help="Alternativer Pfad zur brand_config.yaml.")
     return parser
 
 
-def build_pipeline(llm: LLM) -> Pipeline:
+def build_pipeline(llm: LLM, parallel: bool = False) -> Pipeline:
     """Volle Agentur-Pipeline in Workflow-Reihenfolge (transparent, debugbar).
 
     Trend-Scout → Stratege → Copywriter/Scriptwriter/Post-Production/Visual/SEO →
@@ -87,7 +90,7 @@ def build_pipeline(llm: LLM) -> Pipeline:
         GrowthAnalyst(llm),
         CreativeDirector(llm),    # Opus – finale Freigabe
     ]
-    return Pipeline(steps)
+    return Pipeline(steps, parallel=parallel)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -121,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     llm = LLM(cfg.anthropic_api_key)
-    build_pipeline(llm).run(ctx)
+    build_pipeline(llm, parallel=args.parallel).run(ctx)
 
     day_dir = write_package(ctx)
     print(f"\n✅ Review-Paket erzeugt: {day_dir}")
