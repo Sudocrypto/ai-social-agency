@@ -1,0 +1,30 @@
+# Marken- und System-Einstellungen für die "AI Social Media Agency".
+# Alles hier ist anpassbar, ohne Code zu ändern.
+
+brand_name: "Danilo Takes Off"
+handle: "@danilotakesoff"
+sprache: "Deutsch, locker, direkt, authentisch, Ich-Perspektive"
+thema: "Auswandern aus Deutschland als Perpetual Traveler"
+content_pillars:
+  - "Praktisches How-to zum Auswandern aus Deutschland"
+  - "Persönliche Reise-Dokumentation (Reisen, Orte, Erlebnisse)"
+  - "Ehrliches Behind-the-Scenes der Auswanderungs-Journey"
+zielgruppe: "Deutschsprachige, die selbst mit Auswandern/Perpetual Travel liebäugeln"
+tonalität: "nahbar, ehrlich, motivierend, kein Corporate-Sprech"
+
+# --- Video-Einstellungen (Producer, Phase 3) ---
+video_modus: "broll_only"       # oder "full_synthetic"
+video_modell: "veo-3.1"         # oder "seedance-2.0-fast", "kling-3.0"
+max_clip_sekunden: 8
+max_video_budget_eur: 5.0       # Kosten-Cap pro Durchlauf; darüber bricht der Producer ab
+
+# --- Modell-Einstellungen ---
+# Der Creative Director prüft/gibt frei -> Opus. Alle Fachagents -> Sonnet.
+# Pro Agent überschreibbar über "model_overrides" unten.
+models:
+  director: "claude-opus-4-8"
+  default:  "claude-sonnet-5"
+model_overrides: {}             # z.B. { copywriter: "claude-opus-4-8" }
+
+# --- Trend-Scout ---
+websearch_default: true         # Live-Websuche an; per --no-websearch abschaltbar
