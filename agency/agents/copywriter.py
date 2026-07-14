@@ -49,6 +49,8 @@ class Copywriter(BaseAgent):
             f"AUFGABE: Schreibe fertige, direkt postbare Texte zum Thema:\n"
             f"» {thema} «\n"
             f"Content-Pillar: {ctx.pillar}\n\n"
+            "STRATEGIE (vom Content-Strategen, daran orientieren):\n"
+            f"{self.prior(ctx, 'content_strategist')}\n\n"
             f"Erzeuge pro Plattform {ctx.count} eigenständige Post-Variante(n).\n\n"
             f"PLATTFORMEN & VORGABEN:\n{briefs}\n"
             "AUSGABEFORMAT (reines Markdown, exakt diese Struktur):\n\n"

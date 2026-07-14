@@ -56,6 +56,15 @@ class BaseAgent:
         ctx.set(self.key, parsed)
         return parsed
 
+    # --- Zugriff auf Vorgänger-Ergebnisse ------------------------------------
+    def prior(self, ctx: RunContext, agent_key: str, limit: int = 4000) -> str:
+        """Ergebnis eines vorherigen Agents als (ggf. gekürzter) String."""
+        val = ctx.get(agent_key, "")
+        text = val if isinstance(val, str) else str(val)
+        if len(text) > limit:
+            return text[:limit] + "\n…(gekürzt)…"
+        return text
+
     # --- gemeinsamer Marken-Kontext für System-Prompts ------------------------
     def brand_context(self, ctx: RunContext) -> str:
         b = ctx.config.brand

@@ -26,8 +26,12 @@ class RunContext:
 
     # Ergebnisse: agent_key -> beliebiges Ergebnis (meist Text/Markdown oder dict).
     outputs: dict[str, object] = field(default_factory=dict)
-    # Kosten-Log: Liste von {agent, model, input_tokens, output_tokens, cost_usd}.
+    # LLM-Kosten-Log: Liste von {agent, model, input_tokens, output_tokens, cost_usd}.
     cost_log: list[dict] = field(default_factory=list)
+    # Video-Kosten-Log: Liste von {plattform, clip, sekunden, modell, kosten_eur, gerendert}.
+    video_log: list[dict] = field(default_factory=list)
+    # Rendern echte fal.ai-Clips? Default: nein (Dry-Run).
+    render_video: bool = False
 
     def set(self, agent_key: str, value: object) -> None:
         self.outputs[agent_key] = value
@@ -49,3 +53,27 @@ class RunContext:
     @property
     def total_cost_usd(self) -> float:
         return round(sum(entry["cost_usd"] for entry in self.cost_log), 5)
+
+    def record_video(
+        self, plattform: str, clip: int, sekunden: int, modell: str,
+        kosten_eur: float, gerendert: bool,
+    ) -> None:
+        self.video_log.append(
+            {
+                "plattform": plattform,
+                "clip": clip,
+                "sekunden": sekunden,
+                "modell": modell,
+                "kosten_eur": round(kosten_eur, 4),
+                "gerendert": gerendert,
+            }
+        )
+
+    @property
+    def total_video_cost_eur(self) -> float:
+        return round(sum(e["kosten_eur"] for e in self.video_log), 4)
+
+    def video_cost_for(self, plattform: str) -> float:
+        return round(
+            sum(e["kosten_eur"] for e in self.video_log if e["plattform"] == plattform), 4
+        )
