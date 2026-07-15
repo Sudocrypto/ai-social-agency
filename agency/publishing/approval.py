@@ -54,3 +54,36 @@ def load_approvals(day_dir: Path) -> dict[str, dict]:
     f = day_dir / "director_review.md"
     md = f.read_text(encoding="utf-8") if f.exists() else ""
     return parse_approvals(md)
+
+
+def parse_compliance(report_md: str) -> dict[str, dict]:
+    """Ordnet jeder Plattform das Compliance-Verdikt zu.
+
+    Rückgabe: {platform_key: {"ok": bool | None, "status": str}}
+    ok=False bei RISIKO, True bei OK, None wenn keine Prüfung vorliegt.
+    """
+    result: dict[str, dict] = {}
+    current: str | None = None
+
+    for line in (report_md or "").splitlines():
+        m = _HEADING.match(line)
+        if m:
+            current = _match_platform(m.group(1).strip().lower())
+            continue
+        if current and current not in result:
+            up = line.upper()
+            if "RISIKO" in up:
+                result[current] = {"ok": False, "status": line.strip()}
+            elif "✅" in line or re.search(r"\bOK\b", up):
+                result[current] = {"ok": True, "status": line.strip()}
+
+    for pk in ALL_PLATFORMS:
+        result.setdefault(pk, {"ok": None, "status": "keine Prüfung"})
+    return result
+
+
+def load_compliance(day_dir: Path) -> dict[str, dict]:
+    """Lädt compliance_report.md aus dem Tages-Ordner und parst die Verdikte."""
+    f = day_dir / "compliance_report.md"
+    md = f.read_text(encoding="utf-8") if f.exists() else ""
+    return parse_compliance(md)

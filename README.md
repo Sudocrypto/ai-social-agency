@@ -128,10 +128,12 @@ kein gehostetes Medium bzw. kein fertiges Video übergeben wird – so postet ni
 Unvollständiges. Optionale Live-Abhängigkeiten: `tweepy` (X),
 `google-api-python-client google-auth google-auth-oauthlib` (YouTube).
 
-**Freigabe wird durchgesetzt:** `publish.py` liest die Bewertung des Creative
-Directors (`director_review.md`) und postet Plattformen, die er als
-`⚠️ NACHBESSERN` markiert hat, **nicht** – es sei denn, du überstimmst mit
-`--force`. So ist die „finale Freigabe-Instanz" auch beim Posten wirksam.
+**Freigabe & Compliance werden durchgesetzt:** `publish.py` liest die Bewertung
+des Creative Directors (`director_review.md`) **und** den Compliance-Report
+(`compliance_report.md`). Plattformen, die als `⚠️ NACHBESSERN` bzw. mit
+`⚠️ RISIKO` markiert sind, werden **nicht** gepostet – es sei denn, du überstimmst
+mit `--force`. So sind Freigabe-Instanz und rechtliche Prüfung auch beim Posten
+wirksam.
 
 ## Video-Assembly (optional)
 

@@ -5,7 +5,12 @@ from __future__ import annotations
 import json
 
 import publish
-from agency.publishing.approval import load_approvals, parse_approvals
+from agency.publishing.approval import (
+    load_approvals,
+    load_compliance,
+    parse_approvals,
+    parse_compliance,
+)
 
 DIRECTOR_MD = """# Creative-Director-Freigabe
 
@@ -77,3 +82,64 @@ def test_publish_force_overrides(tmp_path, monkeypatch, capsys):
     publish.main(["--date", "2026-07-14", "--platform", "instagram", "--force"])
     out = capsys.readouterr().out
     assert "Instagram: ⛔" not in out  # trotz NACHBESSERN nicht mehr geblockt
+
+
+COMPLIANCE_MD = """# Compliance-Prüfung
+## Prüfung pro Plattform
+### X (Twitter)
+**Status:** ✅ OK
+### Instagram
+**Status:** ⚠️ RISIKO
+**Gefundene Risiken:** Kaufsignal.
+"""
+
+DIRECTOR_ALL_OK = """# Freigabe
+### X (Twitter)
+**Status:** ✅ FREIGABE
+### Instagram
+**Status:** ✅ FREIGABE
+"""
+
+
+def test_parse_compliance():
+    c = parse_compliance(COMPLIANCE_MD)
+    assert c["x"]["ok"] is True
+    assert c["instagram"]["ok"] is False
+    assert c["facebook"]["ok"] is None  # nicht geprüft
+
+
+def test_load_compliance(tmp_path):
+    (tmp_path / "compliance_report.md").write_text(COMPLIANCE_MD, encoding="utf-8")
+    assert load_compliance(tmp_path)["instagram"]["ok"] is False
+
+
+def test_publish_blocks_compliance_risiko(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-14"
+    for pk in ("x", "instagram"):
+        p = day / pk
+        p.mkdir(parents=True)
+        (p / "post.md").write_text(f"## {pk}\n### Post 1\nText {pk}. #x", encoding="utf-8")
+        (p / "meta.json").write_text(json.dumps({"titel": "T"}), encoding="utf-8")
+    (day / "director_review.md").write_text(DIRECTOR_ALL_OK, encoding="utf-8")
+    (day / "compliance_report.md").write_text(COMPLIANCE_MD, encoding="utf-8")
+    monkeypatch.setattr(publish, "OUTPUT_ROOT", tmp_path)
+
+    publish.main(["--date", "2026-07-14", "--platform", "all"])
+    out = capsys.readouterr().out
+    # Instagram trotz Director-FREIGABE wegen Compliance-Risiko blockiert; X nicht.
+    assert "Instagram: ⛔ Compliance-Risiko" in out
+    assert "WÜRDE auf X (Twitter) posten" in out
+
+
+def test_publish_force_overrides_compliance(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-14"
+    p = day / "instagram"
+    p.mkdir(parents=True)
+    (p / "post.md").write_text("## instagram\n### Post 1\nText. #x", encoding="utf-8")
+    (p / "meta.json").write_text(json.dumps({"titel": "T"}), encoding="utf-8")
+    (day / "compliance_report.md").write_text(COMPLIANCE_MD, encoding="utf-8")
+    monkeypatch.setattr(publish, "OUTPUT_ROOT", tmp_path)
+
+    publish.main(["--date", "2026-07-14", "--platform", "instagram", "--force"])
+    out = capsys.readouterr().out
+    assert "Compliance-Risiko" not in out

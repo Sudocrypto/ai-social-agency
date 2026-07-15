@@ -22,7 +22,7 @@ from pathlib import Path
 from agency.config import ROOT
 from agency.platforms import ALL_PLATFORMS
 from agency.publishing import get_publisher
-from agency.publishing.approval import load_approvals
+from agency.publishing.approval import load_approvals, load_compliance
 from agency.publishing.credentials import load_credentials
 from agency.publishing.loader import load_post
 
@@ -77,12 +77,20 @@ def main(argv: list[str] | None = None) -> int:
     platforms = ALL_PLATFORMS if args.platform == "all" else [args.platform]
     creds = load_credentials()
     approvals = load_approvals(day_dir)
+    compliance = load_compliance(day_dir)
     mode = "LIVE" if args.live else "DRY-RUN"
     print(f"Paket: {day_dir.name} · Modus: {mode} · Plattformen: {', '.join(platforms)}\n")
 
     any_error = False
     for pk in platforms:
         pub = get_publisher(pk)
+
+        # Compliance-Risiko durchsetzen (rechtliche Absicherung).
+        comp = compliance.get(pk, {})
+        if comp.get("ok") is False and not args.force:
+            print(f"• {pub.name}: ⛔ Compliance-Risiko (Prüfer) "
+                  "– übersprungen (mit --force überstimmbar).")
+            continue
 
         # Freigabe des Creative Directors durchsetzen.
         approval = approvals.get(pk, {})
