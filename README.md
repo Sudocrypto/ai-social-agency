@@ -8,22 +8,32 @@ KI-Video-Clips. **Phase 1:** Content wird generiert und zur Freigabe exportiert
 
 ## Setup
 
+Braucht **Python 3.10+**. Auf macOS ist `python` oft noch das alte System-Python
+2.7 – benutze `python3`. Hinweis für die macOS-`zsh`: **keine `# …`-Kommentare in
+Befehle pasten** (zsh behandelt `#` interaktiv nicht als Kommentar).
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env        # dann ANTHROPIC_API_KEY eintragen (FAL_KEY optional)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
 ```
 
-`.env` wird nie committet. Keys stehen ausschließlich dort, nie im Code.
+Danach `.env` öffnen (`nano .env` oder `open -e .env`) und `ANTHROPIC_API_KEY`
+eintragen (`FAL_KEY` optional). `.env` wird nie committet, Keys stehen nur dort.
+Im aktiven venv ist `python` dann Python 3 – die Beispiele unten funktionieren.
 
 ## Nutzung
 
 ```bash
 python run.py --pillar auswandern --platform all --count 5
 python run.py --pillar reise --platform instagram --topic "Erster Monat Thailand"
-python run.py --pillar auswandern --no-websearch     # kostenloser Testlauf (keine Websuche)
-python run.py --pillar auswandern --render-video      # echte fal.ai-Clips (Phase 3)
+python run.py --pillar auswandern --no-websearch
+python run.py --pillar auswandern --render-video
 ```
+
+(`--no-websearch` = kostenloser Testlauf ohne Live-Websuche; `--render-video` =
+echte fal.ai-Clips statt Dry-Run.)
 
 | Flag | Bedeutung |
 |---|---|
@@ -85,12 +95,15 @@ und eine Bestätigung pro Plattform (`JA`) – es ist nach außen wirksam und ni
 umkehrbar.
 
 ```bash
-python publish.py                                   # neuestes Paket, Dry-Run, alle Plattformen
+python publish.py
 python publish.py --date 2026-07-14 --platform x
-python publish.py --platform facebook --live        # echt posten (mit Rückfrage)
+python publish.py --platform facebook --live
 python publish.py --platform instagram --ig-media-url https://.../reel.mp4 --live
 python publish.py --platform youtube --yt-video /pfad/final.mp4 --live
 ```
+
+Ohne Argumente: neuestes Paket, Dry-Run, alle Plattformen. `--live` postet echt
+(mit Rückfrage pro Plattform).
 
 Zugangsdaten kommen aus `.env` (Vorlage in `.env.example`): X API v2 (OAuth 1.0a),
 Meta Graph (Facebook-Seite + Instagram-Business), YouTube Data API v3 (OAuth2).
@@ -119,12 +132,16 @@ Baut aus dem Post-Production-Schnittplan eine fertige `.mp4` – dein iPhone-Mat
 **ffmpeg**). Der eigentliche Render läuft lokal (ffmpeg installiert).
 
 ```bash
-python assemble.py --platform youtube               # 1) legt editierbares assembly.json an
-#   -> assembly.json bearbeiten: eigene Clip-Pfade, Timings, Untertitel, MUSIK.mp3
-python assemble.py --platform youtube               # 2) Dry-Run: zeigt ffmpeg-Kommando + SRT
-python assemble.py --platform youtube --render      # 3) rendert final.mp4
-python assemble.py --platform instagram --scaffold  # assembly.json neu erzeugen
+python assemble.py --platform youtube
+python assemble.py --platform youtube
+python assemble.py --platform youtube --render
+python assemble.py --platform instagram --scaffold
 ```
+
+Ablauf: 1. Aufruf legt ein editierbares `assembly.json` an → darin eigene
+Clip-Pfade, Timings, Untertitel und `MUSIK.mp3` eintragen. 2. Aufruf (Dry-Run)
+zeigt das ffmpeg-Kommando + schreibt die SRT. 3. Mit `--render` entsteht
+`final.mp4`. `--scaffold` erzeugt das `assembly.json` neu.
 
 `assembly.json` (pro Plattform, in `output/{datum}/{plattform}/`) beschreibt jedes
 Segment (`source`, `start`, `end`, `subtitle`, `mute`), Musik (`gain_db`) und das
