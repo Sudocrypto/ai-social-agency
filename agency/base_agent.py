@@ -71,7 +71,7 @@ class BaseAgent:
     def brand_context(self, ctx: RunContext) -> str:
         b = ctx.config.brand
         pillars = "\n".join(f"  - {p}" for p in ctx.config.content_pillars)
-        return (
+        base = (
             f"MARKE: {b.get('brand_name', '')} ({b.get('handle', '')})\n"
             f"MARKEN-HASHTAG (immer exakt so schreiben, niemals abkürzen oder abwandeln): "
             f"{ctx.config.branded_hashtag}\n"
@@ -81,3 +81,5 @@ class BaseAgent:
             f"ZIELGRUPPE: {b.get('zielgruppe', '')}\n"
             f"CONTENT-PILLARS:\n{pillars}"
         )
+        compliance = ctx.config.compliance_block()
+        return f"{base}\n\n{compliance}" if compliance else base

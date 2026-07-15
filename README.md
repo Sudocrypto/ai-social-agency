@@ -158,6 +158,29 @@ bekommen automatisch Stille; die Musik läuft leiser darunter. Der Scaffold
 übernimmt die generierten B-Roll-Clips und verteilt die Untertitel aus dem
 Schnitt-Briefing – du fügst nur dein eigenes Material und die Musikdatei ein.
 
+## Mehrere Marken & Compliance-Modus
+
+Über `--config` lässt sich eine beliebige Marken-Datei laden – so betreibst du
+mehrere Marken mit einem System:
+
+```bash
+python run.py --config brand_config.crypto.yaml --pillar basics --platform instagram --count 1
+```
+
+Die mitgelieferte Vorlage **`brand_config.crypto.yaml`** ist eine Bitcoin-/
+Investment-Marke mit **Compliance-Leitplanken**. Ist im Config-Block
+`compliance:` `enabled: true` gesetzt, dann:
+
+- werden die `regeln` in **jeden** Agent-System-Prompt eingespeist (keine konkrete
+  Anlageberatung, keine garantierten Renditen, kein FOMO, Werbung kennzeichnen …),
+- wird der `disclaimer` **automatisch an jeden `post.md` angehängt**.
+
+> ⚠️ **Kein Rechtsersatz.** Der Compliance-Modus senkt Risiko, macht dich aber
+> nicht rechtlich unangreifbar und ersetzt keine Rechtsberatung. Lass Marke +
+> Disclaimer einmal anwaltlich prüfen (in DE/EU u. a. BaFin, MiCA,
+> Anlageberatung/Finanzanalyse, Werbekennzeichnung). Passe `disclaimer`/`regeln`
+> an deinen Fall an.
+
 ## Tests
 
 Offline-Regressionssuite (gestubbtes LLM, kein API-Key nötig):

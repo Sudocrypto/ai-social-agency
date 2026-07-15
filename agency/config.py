@@ -27,6 +27,7 @@ class Config:
     model_overrides: dict[str, str]
     video: dict[str, Any]
     effort: dict[str, Any]
+    compliance: dict[str, Any]
     websearch_default: bool
     anthropic_api_key: str | None
     fal_key: str | None
@@ -70,6 +71,30 @@ class Config:
     def content_pillars(self) -> list[str]:
         return list(self.brand.get("content_pillars", []))
 
+    # --- Compliance / rechtliche Leitplanken ---------------------------------
+    @property
+    def compliance_enabled(self) -> bool:
+        return bool(self.compliance.get("enabled"))
+
+    @property
+    def disclaimer(self) -> str:
+        return str(self.compliance.get("disclaimer", "")).strip()
+
+    @property
+    def compliance_rules(self) -> list[str]:
+        return list(self.compliance.get("regeln", []))
+
+    def compliance_block(self) -> str:
+        """Formatierter Regel-Block zum Einspeisen in die Agent-System-Prompts."""
+        if not self.compliance_enabled:
+            return ""
+        rules = "\n".join(f"- {r}" for r in self.compliance_rules)
+        return (
+            "COMPLIANCE / RECHTLICHE LEITPLANKEN (strikt einhalten, keine Ausnahmen):\n"
+            f"{rules}\n"
+            "An jeden Beitrag wird automatisch ein rechtlicher Disclaimer angehängt."
+        )
+
     @property
     def branded_hashtag(self) -> str:
         """Der einzig korrekte Marken-Hashtag, aus brand_name (sonst handle)."""
@@ -106,6 +131,7 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> Config:
         model_overrides=data.get("model_overrides", {}) or {},
         video=video,
         effort=data.get("effort", {}) or {},
+        compliance=data.get("compliance", {}) or {},
         websearch_default=bool(data.get("websearch_default", True)),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY"),
         fal_key=os.environ.get("FAL_KEY"),

@@ -75,7 +75,13 @@ def write_package(ctx: RunContext) -> Path:
         pdir = day_dir / pk
         pdir.mkdir(parents=True, exist_ok=True)
 
-        (pdir / "post.md").write_text((posts.get(pk, "").strip() + "\n"), encoding="utf-8")
+        post_text = posts.get(pk, "").strip()
+        # Rechtlichen Disclaimer automatisch anhängen (Compliance-Modus).
+        if ctx.config.compliance_enabled:
+            disc = ctx.config.disclaimer
+            if disc and disc not in post_text:
+                post_text = f"{post_text}\n\n{disc}"
+        (pdir / "post.md").write_text(post_text + "\n", encoding="utf-8")
 
         if _has_content(scripts.get(pk, "")):
             (pdir / "video_script.md").write_text(
