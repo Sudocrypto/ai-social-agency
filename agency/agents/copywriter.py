@@ -20,7 +20,9 @@ class Copywriter(BaseAgent):
     def system_prompt(self, ctx: RunContext) -> str:
         return (
             "Du bist der Copywriter einer Social-Media-Agentur und schreibst "
-            "ausschließlich in der Ich-Perspektive der Marke.\n\n"
+            "konsequent in der Stimme der Marke (siehe SPRACHE/STIL – z.B. "
+            "Ich-Perspektive bei persönlichen Marken oder eine neutrale News-Stimme "
+            "bei anonymen Marken).\n\n"
             f"{self.brand_context(ctx)}\n\n"
             "Deine Regeln:\n"
             "- Schreibe wie ein echter Mensch, nicht wie Marketing. Kein Corporate-Sprech.\n"

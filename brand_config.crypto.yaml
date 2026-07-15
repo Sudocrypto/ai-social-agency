@@ -5,17 +5,19 @@
 # Garantie. Lass die Marke + Disclaimer einmal von einem Anwalt prüfen
 # (in DE/EU relevant: BaFin, MiCA, Anlageberatung/Finanzanalyse, Werbekennzeichnung).
 
-# --- Marken-Identität (ANPASSEN) ---
-brand_name: "DEIN MARKENNAME"        # z.B. "Krypto Klartext" – dann Hashtag #KryptoKlartext
-handle: "@deinhandle"
-sprache: "Deutsch, locker, direkt, ehrlich, Ich-Perspektive"
-thema: "Bitcoin & Investieren – erklärt als persönliche Meinung und Bildung, KEINE Anlageberatung"
+# --- Marken-Identität ---
+brand_name: "Anon Bitcoin News"      # -> Marken-Hashtag #AnonBitcoinNews
+handle: "@AnonBitcoinNews"
+sprache: >-
+  Deutsch, direkt, schnell, faktenorientiert – anonyme News-Stimme (kein Klarname,
+  kein persönlicher Ich-Bezug; 'wir'/neutral statt 'ich').
+thema: "Bitcoin- & Krypto-News – anonym, eingeordnet als Meinung/Bildung, KEINE Anlageberatung"
 content_pillars:
-  - "Bitcoin- & Krypto-Basics verständlich erklärt (Wallets, Selbstverwahrung, Sicherheit)"
-  - "Meine persönliche Investment-Reise – Doku & Learnings (keine Empfehlung)"
-  - "Markt-Einordnung, Mindset & typische Anfängerfehler (Bildung, keine Kauf-/Verkaufssignale)"
-zielgruppe: "Deutschsprachige Krypto-Neugierige, die Grundlagen und ehrliche Einordnung suchen"
-tonalität: "nahbar, ehrlich, aufklärend, unaufgeregt – kein Hype, kein Corporate-Sprech"
+  - "Aktuelle Bitcoin- & Krypto-News schnell und verständlich eingeordnet"
+  - "Markt-Updates & Ereignisse erklärt (Bildung, keine Kauf-/Verkaufssignale)"
+  - "Bitcoin-Basics, Sicherheit & Selbstverwahrung für Einsteiger"
+zielgruppe: "Deutschsprachige Krypto-Interessierte, die schnelle, eingeordnete News wollen"
+tonalität: "schnell, sachlich, meinungsstark aber neutral-faktisch, seriös trotz Hype-Thema"
 
 # --- Compliance / rechtliche Leitplanken (Kern dieser Vorlage) ---
 compliance:

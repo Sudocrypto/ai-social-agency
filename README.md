@@ -160,6 +160,30 @@ bekommen automatisch Stille; die Musik läuft leiser darunter. Der Scaffold
 übernimmt die generierten B-Roll-Clips und verteilt die Untertitel aus dem
 Schnitt-Briefing – du fügst nur dein eigenes Material und die Musikdatei ein.
 
+## Monitoring / Performance-Überwachung
+
+Verfolgt, wie gut veröffentlichte YouTube-Videos ankommen, und schließt die
+Schleife zurück zum Growth-Analysten. Braucht nur einen **YouTube-Data-API-Key**
+(kein OAuth) für öffentliche Video-Stats.
+
+```bash
+python monitor.py add "https://youtu.be/XXXXXXXXXXX" --thema "Bitcoin ETF"
+python monitor.py list
+python monitor.py fetch
+```
+
+`fetch` ruft Views/Likes/Kommentare ab und schreibt `monitoring/report.md`
+(Ranking, Engagement, beste/schwächste Videos) sowie `monitoring/metrics.csv`.
+Diese CSV steckst du direkt in den Growth-Analysten:
+
+```bash
+python run.py --config brand_config.crypto.yaml --pillar news --platform youtube --metrics monitoring/metrics.csv
+```
+
+So wird aus „was lief gut" ein datengetriebener Plan für die nächste Runde.
+`YOUTUBE_API_KEY` kommt in die `.env` (Google Cloud Console → YouTube Data API v3
+→ API-Key). Die `monitoring/`-Daten bleiben lokal (gitignored).
+
 ## Mehrere Marken & Compliance-Modus
 
 Über `--config` lässt sich eine beliebige Marken-Datei laden – so betreibst du

@@ -5,6 +5,9 @@
 /output/
 *.mp4
 
+# Monitoring-Daten (getrackte Videos, Reports)
+/monitoring/
+
 # Python
 __pycache__/
 *.py[cod]
