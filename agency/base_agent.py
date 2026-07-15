@@ -42,12 +42,14 @@ class BaseAgent:
     # --- Standard-Ablauf ------------------------------------------------------
     def run(self, ctx: RunContext) -> object:
         model = ctx.config.model_for(self.key)
+        effort = ctx.config.effort_for(self.key, ctx.effort_override)
         result = self._llm.call(
             system=self.system_prompt(ctx),
             prompt=self.build_prompt(ctx),
             model=model,
             max_tokens=self.max_tokens,
             web_search=self.uses_web_search and ctx.websearch,
+            effort=effort,
         )
         ctx.record_cost(
             self.key, result.model, result.input_tokens, result.output_tokens, result.cost_usd

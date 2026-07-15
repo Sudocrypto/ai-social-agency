@@ -30,7 +30,8 @@ class FakeLLM:
 
     def call(self, *, system, prompt, model, max_tokens, web_search=False, effort="high"):
         self.calls.append(
-            {"model": model, "web_search": web_search, "system": system, "prompt": prompt}
+            {"model": model, "web_search": web_search, "system": system,
+             "prompt": prompt, "effort": effort}
         )
         s = system
         if "Trend-Scout" in s:

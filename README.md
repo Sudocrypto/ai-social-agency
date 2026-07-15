@@ -45,8 +45,16 @@ echte fal.ai-Clips statt Dry-Run.)
 | `--render-video` | echtes Video-Rendering statt Dry-Run (braucht `FAL_KEY`) |
 | `--parallel` | unabhängige Agents parallel ausführen (schneller); Default sequenziell/debugbar |
 | `--metrics` | Performance-Daten (CSV/TSV/JSON) für datengetriebene Growth-Analyse |
+| `--effort` | `low`/`medium`/`high`/`xhigh`/`max` für ALLE Agents (Kosten/Qualität); überstimmt die Config |
 
 Konfiguration (Marke, Modelle, Video-Modus, Kosten-Cap): **`brand_config.yaml`**.
+
+**Kosten/Qualität steuern:** Jeder Agent hat eine `effort`-Stufe
+(`low`→`max`, mehr = teurer & gründlicher). In `brand_config.yaml` unter `effort`
+pro Agent einstellbar (kreative Agents hoch, mechanische wie SEO/Publisher
+niedriger). Für einen günstigen Draft-Lauf alles global drosseln:
+`python run.py --pillar auswandern --platform instagram --effort low`. Ein
+typischer Voll-Lauf kostet grob 0,10–0,35 $ (steht am Ende in `review.md`).
 
 **Datengetriebene Optimierung:** Mit `--metrics daten.csv` (oder `.json`) bekommt
 der Growth-Analyst echte Performance-Zahlen (Impressions, Likes, Watchtime …) und

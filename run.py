@@ -66,6 +66,10 @@ def build_parser() -> argparse.ArgumentParser:
                              "Default: sequenziell (maximal debugbar).")
     parser.add_argument("--metrics", default=None,
                         help="Performance-Daten (CSV/TSV/JSON) für den Growth-Analysten.")
+    parser.add_argument("--effort", default=None,
+                        choices=["low", "medium", "high", "xhigh", "max"],
+                        help="Effort für ALLE Agents überschreiben (z.B. 'low' = günstiger "
+                             "Testlauf). Ohne Angabe gelten die Werte aus brand_config.yaml.")
     parser.add_argument("--config", default=None,
                         help="Alternativer Pfad zur brand_config.yaml.")
     return parser
@@ -127,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         websearch=websearch,
         render_video=args.render_video,
         metrics=metrics_md,
+        effort_override=args.effort,
     )
 
     if args.render_video and not cfg.fal_key:

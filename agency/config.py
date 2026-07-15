@@ -26,10 +26,14 @@ class Config:
     models: dict[str, str]
     model_overrides: dict[str, str]
     video: dict[str, Any]
+    effort: dict[str, Any]
     websearch_default: bool
     anthropic_api_key: str | None
     fal_key: str | None
     raw: dict[str, Any] = field(repr=False)
+
+    #: Erlaubte Effort-Stufen (steuern Denk-Tiefe -> Kosten/Qualität).
+    VALID_EFFORT = ("low", "medium", "high", "xhigh", "max")
 
     # --- Modellwahl pro Agent -------------------------------------------------
     def model_for(self, agent_key: str) -> str:
@@ -43,6 +47,19 @@ class Config:
         if agent_key == "creative_director":
             return self.models.get("director", "claude-opus-4-8")
         return self.models.get("default", "claude-sonnet-5")
+
+    # --- Effort pro Agent -----------------------------------------------------
+    def effort_for(self, agent_key: str, override: str | None = None) -> str:
+        """Effort-Stufe für einen Agent.
+
+        Priorität: globaler CLI-Override > per-Agent-Override aus der Config >
+        globaler Default. Ungültige Werte fallen sicher auf 'high' zurück.
+        """
+        if override:
+            return override if override in self.VALID_EFFORT else "high"
+        overrides = self.effort.get("overrides", {}) or {}
+        value = overrides.get(agent_key, self.effort.get("default", "high"))
+        return value if value in self.VALID_EFFORT else "high"
 
     # --- Bequeme Zugriffe auf Marken-Felder ----------------------------------
     @property
@@ -79,6 +96,7 @@ def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> Config:
         models=models,
         model_overrides=data.get("model_overrides", {}) or {},
         video=video,
+        effort=data.get("effort", {}) or {},
         websearch_default=bool(data.get("websearch_default", True)),
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY"),
         fal_key=os.environ.get("FAL_KEY"),

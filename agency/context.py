@@ -25,6 +25,8 @@ class RunContext:
     websearch: bool = True
     # Optionale, vom Nutzer gelieferte Performance-Daten (als Markdown-Übersicht).
     metrics: str | None = None
+    # Globaler Effort-Override (CLI --effort); None = Config-Werte nutzen.
+    effort_override: str | None = None
     run_date: str = field(default_factory=lambda: date.today().isoformat())
 
     # Ergebnisse: agent_key -> beliebiges Ergebnis (meist Text/Markdown oder dict).

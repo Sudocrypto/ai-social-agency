@@ -26,5 +26,17 @@ models:
   default:  "claude-sonnet-5"
 model_overrides: {}             # z.B. { copywriter: "claude-opus-4-8" }
 
+# --- Effort pro Agent (Kosten/Qualitäts-Regler) ---
+# Stufen: low | medium | high | xhigh | max. Höher = mehr Denk-Tiefe, teurer.
+# Kreative/prüfende Agents hoch, mechanische (Formatierung/Extraktion) niedriger.
+# Global überstimmbar per CLI: --effort low  (günstige Testläufe).
+effort:
+  default: high
+  overrides:
+    seo_hashtag: low
+    community_manager: low
+    publisher: medium
+    editor: medium
+
 # --- Trend-Scout ---
 websearch_default: true         # Live-Websuche an; per --no-websearch abschaltbar
