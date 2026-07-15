@@ -24,19 +24,33 @@ class GrowthAnalyst(BaseAgent):
             "Regeln:\n"
             "- Definiere KPIs pro Plattform (z.B. Watchtime, Saves, Shares, Kommentare).\n"
             "- Formuliere testbare Hypothesen für die nächste Runde.\n"
-            "- Wenn keine echten Daten vorliegen: klar als Baseline/Annahme kennzeichnen, "
-            "keine erfundenen Zahlen."
+            "- Liegen echte Performance-Daten vor, analysiere DIESE konkret "
+            "(was lief, was floppte, woran könnte es liegen) statt allgemein zu bleiben.\n"
+            "- Ohne Daten: klar als Baseline/Annahme kennzeichnen, keine erfundenen Zahlen."
         )
 
     def build_prompt(self, ctx: RunContext) -> str:
         platforms = resolve_platforms(ctx.platform)
         pnames = ", ".join(spec(p).name for p in platforms)
-        return (
-            f"PLATTFORMEN: {pnames}\nTHEMA: {ctx.topic or ctx.pillar}\n\n"
-            "AUFGABE: Liefere den Growth-Plan als Markdown:\n\n"
-            "## KPIs pro Plattform\n"
-            "### <Plattform>\n- <KPI + warum>\n\n"
-            "## Hypothesen für die nächste Runde\n- <testbare Hypothese>\n\n"
-            "## Was beim nächsten Durchlauf messen/mitgeben\n- <konkret>\n\n"
-            "Nur das Markdown."
-        )
+
+        if ctx.metrics:
+            data_block = (
+                "GELIEFERTE PERFORMANCE-DATEN (analysiere diese konkret):\n"
+                f"{ctx.metrics}\n\n"
+                "AUFGABE: Datengetriebener Growth-Plan als Markdown:\n\n"
+                "## Daten-Analyse\n- <was die Zahlen zeigen, pro Plattform/Post>\n\n"
+                "## Was funktioniert / was nicht\n- <konkret, mit Bezug auf die Zahlen>\n\n"
+                "## Konkrete Optimierungen für die nächste Runde\n- <umsetzbar>\n\n"
+                "## Hypothesen zum Testen\n- <testbare Hypothese>\n\n"
+            )
+        else:
+            data_block = (
+                "AUFGABE: Liefere den Growth-Plan als Markdown "
+                "(keine Daten geliefert -> Baseline):\n\n"
+                "## KPIs pro Plattform\n"
+                "### <Plattform>\n- <KPI + warum>\n\n"
+                "## Hypothesen für die nächste Runde\n- <testbare Hypothese>\n\n"
+                "## Was beim nächsten Durchlauf messen/mitgeben\n- <konkret>\n\n"
+            )
+
+        return f"PLATTFORMEN: {pnames}\nTHEMA: {ctx.topic or ctx.pillar}\n\n{data_block}Nur das Markdown."

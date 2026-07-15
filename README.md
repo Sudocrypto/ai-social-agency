@@ -34,8 +34,14 @@ python run.py --pillar auswandern --render-video      # echte fal.ai-Clips (Phas
 | `--no-websearch` | Live-Websuche des Trend-Scouts aus |
 | `--render-video` | echtes Video-Rendering statt Dry-Run (braucht `FAL_KEY`) |
 | `--parallel` | unabhängige Agents parallel ausführen (schneller); Default sequenziell/debugbar |
+| `--metrics` | Performance-Daten (CSV/TSV/JSON) für datengetriebene Growth-Analyse |
 
 Konfiguration (Marke, Modelle, Video-Modus, Kosten-Cap): **`brand_config.yaml`**.
+
+**Datengetriebene Optimierung:** Mit `--metrics daten.csv` (oder `.json`) bekommt
+der Growth-Analyst echte Performance-Zahlen (Impressions, Likes, Watchtime …) und
+analysiert konkret, was lief und was floppte, statt nur Baseline-KPIs zu nennen.
+Er erkennt eine `plattform`-Spalte und bildet Summen pro Plattform.
 
 ## Die Agents
 

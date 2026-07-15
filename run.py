@@ -64,6 +64,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--parallel", action="store_true",
                         help="Unabhängige Agents parallel ausführen (schneller). "
                              "Default: sequenziell (maximal debugbar).")
+    parser.add_argument("--metrics", default=None,
+                        help="Performance-Daten (CSV/TSV/JSON) für den Growth-Analysten.")
     parser.add_argument("--config", default=None,
                         help="Alternativer Pfad zur brand_config.yaml.")
     return parser
@@ -107,6 +109,15 @@ def main(argv: list[str] | None = None) -> int:
     pillar = _resolve_pillar(args.pillar, cfg.content_pillars)
     websearch = cfg.websearch_default and not args.no_websearch
 
+    metrics_md = None
+    if args.metrics:
+        from agency.metrics import Metrics
+        try:
+            metrics_md = Metrics.load(args.metrics).to_markdown()
+        except Exception as exc:
+            print(f"FEHLER beim Laden von --metrics: {exc}", file=sys.stderr)
+            return 2
+
     ctx = RunContext(
         config=cfg,
         pillar=pillar,
@@ -115,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
         topic=args.topic,
         websearch=websearch,
         render_video=args.render_video,
+        metrics=metrics_md,
     )
 
     if args.render_video and not cfg.fal_key:
