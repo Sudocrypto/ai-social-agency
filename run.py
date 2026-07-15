@@ -15,6 +15,7 @@ import sys
 
 from agency.agents import (
     CommunityManager,
+    ComplianceOfficer,
     ContentStrategist,
     Copywriter,
     CreativeDirector,
@@ -93,6 +94,7 @@ def build_pipeline(llm: LLM, parallel: bool = False) -> Pipeline:
         VideoProducer(),          # kein LLM – erzeugt/plant Clips aus Visual-Prompts
         Editor(llm),              # Lektor korrigiert die Post-Texte
         Publisher(llm),           # finale, postbare Fassung -> post.md
+        ComplianceOfficer(llm),   # nur im Compliance-Modus: prüft auf rechtliche Risiken
         GrowthAnalyst(llm),
         CreativeDirector(llm),    # Opus – finale Freigabe
     ]

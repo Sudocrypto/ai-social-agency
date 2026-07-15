@@ -160,6 +160,7 @@ def _write_runlevel(ctx: RunContext, day_dir: Path) -> None:
         "trends.md": ("trend_scout", "Trend-Recherche"),
         "strategy.md": ("content_strategist", "Strategie / Redaktionsplan"),
         "community.md": ("community_manager", "Community-Material"),
+        "compliance_report.md": ("compliance_officer", "Compliance-Prüfung"),
         "growth.md": ("growth_analyst", "Growth-Plan"),
         "director_review.md": ("creative_director", "Creative-Director-Freigabe"),
     }
@@ -194,7 +195,8 @@ def _write_review(ctx: RunContext, day_dir: Path, platform_keys: list[str], vide
             L.append(f"- `{f}`")
         L.append("")
     L.append("## Lauf-Dokumente")
-    for f in ("trends.md", "strategy.md", "community.md", "growth.md", "director_review.md"):
+    for f in ("trends.md", "strategy.md", "community.md", "compliance_report.md",
+              "growth.md", "director_review.md"):
         if (day_dir / f).exists():
             L.append(f"- `{f}`")
     L.append("")

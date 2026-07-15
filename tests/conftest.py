@@ -68,6 +68,8 @@ class FakeLLM:
             body = _per_platform(lambda n: f"### Post 1\nFinaler {n}-Post. #auswandern #reise")
         elif "Growth-Analyst" in s:
             body = "## KPIs pro Plattform\n### X\n- Saves"
+        elif "Compliance-Prüfer" in s:
+            body = "## Gesamt-Risikoeinschätzung\nGeringes Risiko.\n\n### X\n**Status:** ✅ OK"
         elif "Creative Director" in s:
             body = "## Gesamturteil\nStark.\n\n### X\n**Status:** ✅ FREIGABE"
         else:

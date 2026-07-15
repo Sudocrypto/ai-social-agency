@@ -11,6 +11,7 @@ from .community_manager import CommunityManager
 from .video_producer import VideoProducer
 from .editor import Editor
 from .publisher import Publisher
+from .compliance_officer import ComplianceOfficer
 from .growth_analyst import GrowthAnalyst
 from .creative_director import CreativeDirector
 
@@ -26,6 +27,7 @@ __all__ = [
     "VideoProducer",
     "Editor",
     "Publisher",
+    "ComplianceOfficer",
     "GrowthAnalyst",
     "CreativeDirector",
 ]

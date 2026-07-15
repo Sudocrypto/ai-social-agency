@@ -173,7 +173,11 @@ Investment-Marke mit **Compliance-Leitplanken**. Ist im Config-Block
 
 - werden die `regeln` in **jeden** Agent-System-Prompt eingespeist (keine konkrete
   Anlageberatung, keine garantierten Renditen, kein FOMO, Werbung kennzeichnen …),
-- wird der `disclaimer` **automatisch an jeden `post.md` angehängt**.
+- wird der `disclaimer` **automatisch an jeden `post.md` angehängt**,
+- läuft ein **Compliance-Prüfer-Agent**: er scannt die finalen Posts auf riskante
+  Formulierungen, schreibt `compliance_report.md` und meldet Risiken an den
+  Creative Director, der bei `⚠️ RISIKO` nachbessern lässt (nur im Compliance-Modus
+  aktiv – bei normalen Marken übersprungen, kein Extra-Aufruf/Kosten).
 
 > ⚠️ **Kein Rechtsersatz.** Der Compliance-Modus senkt Risiko, macht dich aber
 > nicht rechtlich unangreifbar und ersetzt keine Rechtsberatung. Lass Marke +

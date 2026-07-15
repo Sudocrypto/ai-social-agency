@@ -21,8 +21,9 @@ DEPENDENCIES: dict[str, list[str]] = {
     "video_producer": ["visual_designer"],
     "editor": ["copywriter"],
     "publisher": ["editor", "seo_hashtag"],
+    "compliance_officer": ["publisher"],
     "growth_analyst": [],
-    "creative_director": ["publisher"],
+    "creative_director": ["publisher", "compliance_officer"],
 }
 
 

@@ -36,7 +36,13 @@ class CreativeDirector(BaseAgent):
             f"PLATTFORMEN: {pnames}\nTHEMA: {ctx.topic or ctx.pillar}\n\n"
             "FINALE POSTS (Publisher):\n"
             f"{self.prior(ctx, 'publisher', 5000)}\n\n"
-            "STRATEGIE (Kurzfassung):\n"
+            + (
+                "COMPLIANCE-PRÜFUNG (unbedingt berücksichtigen – bei RISIKO nachbessern):\n"
+                f"{self.prior(ctx, 'compliance_officer', 2500)}\n\n"
+                if ctx.get("compliance_officer")
+                else ""
+            )
+            + "STRATEGIE (Kurzfassung):\n"
             f"{self.prior(ctx, 'content_strategist', 1200)}\n\n"
             "AUFGABE: Erstelle die Freigabe-Prüfung als Markdown:\n\n"
             "## Gesamturteil\n<1–2 Sätze>\n\n"
