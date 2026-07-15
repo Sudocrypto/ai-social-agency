@@ -71,6 +71,36 @@ darüber hinausgehende Clips werden übersprungen und im Plan vermerkt. Modell
 wählbar via `video_modell` (`veo-3.1` / `seedance-2.0-fast` / `kling-3.0`),
 Clip-Länge via `max_clip_sekunden`.
 
+## Phase 2: Auto-Posting (optional)
+
+Freigegebenen Content aus einem Review-Paket per API posten. **Standard ist
+Dry-Run** (nur Validierung + Vorschau, kein Netz). Echtes Posten braucht `--live`
+und eine Bestätigung pro Plattform (`JA`) – es ist nach außen wirksam und nicht
+umkehrbar.
+
+```bash
+python publish.py                                   # neuestes Paket, Dry-Run, alle Plattformen
+python publish.py --date 2026-07-14 --platform x
+python publish.py --platform facebook --live        # echt posten (mit Rückfrage)
+python publish.py --platform instagram --ig-media-url https://.../reel.mp4 --live
+python publish.py --platform youtube --yt-video /pfad/final.mp4 --live
+```
+
+Zugangsdaten kommen aus `.env` (Vorlage in `.env.example`): X API v2 (OAuth 1.0a),
+Meta Graph (Facebook-Seite + Instagram-Business), YouTube Data API v3 (OAuth2).
+
+| Plattform | Posten | Besonderheit |
+|---|---|---|
+| X (Twitter) | Text/Thread | via `tweepy` (optional) |
+| Facebook | Text | direkter Graph-Call |
+| Instagram | Bild/Reel | braucht **öffentlich gehostete** Medien-URL (`--ig-media-url`) |
+| YouTube | Video-Upload | braucht **fertige Videodatei** (`--yt-video`); startet auf *privat* |
+
+Instagram und YouTube liefern im Dry-Run bewusst einen Validierungsfehler, solange
+kein gehostetes Medium bzw. kein fertiges Video übergeben wird – so postet nichts
+Unvollständiges. Optionale Live-Abhängigkeiten: `tweepy` (X),
+`google-api-python-client google-auth google-auth-oauthlib` (YouTube).
+
 ## Tests
 
 Offline-Regressionssuite (gestubbtes LLM, kein API-Key nötig):
