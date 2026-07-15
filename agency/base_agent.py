@@ -73,6 +73,8 @@ class BaseAgent:
         pillars = "\n".join(f"  - {p}" for p in ctx.config.content_pillars)
         return (
             f"MARKE: {b.get('brand_name', '')} ({b.get('handle', '')})\n"
+            f"MARKEN-HASHTAG (immer exakt so schreiben, niemals abkürzen oder abwandeln): "
+            f"{ctx.config.branded_hashtag}\n"
             f"THEMA: {b.get('thema', '')}\n"
             f"SPRACHE/STIL: {b.get('sprache', '')}\n"
             f"TONALITÄT: {b.get('tonalität', '')}\n"

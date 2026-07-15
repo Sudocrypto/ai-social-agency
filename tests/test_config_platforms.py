@@ -19,6 +19,25 @@ def test_model_override(cfg):
     assert cfg.model_for("copywriter") == "claude-opus-4-8"
 
 
+def test_branded_hashtag(cfg):
+    # brand_name "Danilo Takes Off" -> "#DaniloTakesOff", nicht "#DanTakesOff".
+    assert cfg.branded_hashtag == "#DaniloTakesOff"
+
+
+def test_branded_hashtag_in_agent_context(cfg, ctx, fake_llm):
+    from agency.agents import Copywriter
+
+    bc = Copywriter(fake_llm).brand_context(ctx)
+    assert "#DaniloTakesOff" in bc
+    assert "MARKEN-HASHTAG" in bc
+
+
+def test_branded_hashtag_from_handle_fallback(cfg):
+    cfg.brand["brand_name"] = ""
+    cfg.brand["handle"] = "@danilotakesoff"
+    assert cfg.branded_hashtag == "#danilotakesoff"
+
+
 def test_resolve_platforms_all():
     assert resolve_platforms("all") == ["x", "instagram", "facebook", "youtube"]
 

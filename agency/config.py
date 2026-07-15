@@ -70,6 +70,15 @@ class Config:
     def content_pillars(self) -> list[str]:
         return list(self.brand.get("content_pillars", []))
 
+    @property
+    def branded_hashtag(self) -> str:
+        """Der einzig korrekte Marken-Hashtag, aus brand_name (sonst handle)."""
+        name = str(self.brand.get("brand_name", "")).strip()
+        if name:
+            return "#" + "".join(name.split())          # "Danilo Takes Off" -> "#DaniloTakesOff"
+        handle = str(self.brand.get("handle", "")).lstrip("@").strip()
+        return f"#{handle}" if handle else ""
+
 
 def load_config(config_path: Path | str = DEFAULT_CONFIG_PATH) -> Config:
     """Lädt .env + brand_config.yaml und validiert das Nötigste."""

@@ -25,6 +25,10 @@ class SeoHashtag(BaseAgent):
             "- Titel/Description plattformgerecht (YouTube-SEO ≠ Instagram-Caption).\n"
             "- Hashtag-Mengen an die Plattform-Vorgabe halten, Mix aus groß/nischig.\n"
             "- Keywords: echte Suchbegriffe der Zielgruppe zum Thema Auswandern.\n"
+            "- Nutze ETABLIERTE, korrekt geschriebene Hashtags – keine erfundenen "
+            "oder verdrehten (z.B. #DigitalNomad statt #DigitalNomade).\n"
+            "- Setze den Marken-Hashtag IMMER exakt wie oben vorgegeben; erfinde "
+            "keine Abkürzung der Marke.\n"
             "- Exakt die geforderten Feld-Labels benutzen (werden maschinell geparst)."
         )
 
