@@ -101,6 +101,11 @@ kein gehostetes Medium bzw. kein fertiges Video übergeben wird – so postet ni
 Unvollständiges. Optionale Live-Abhängigkeiten: `tweepy` (X),
 `google-api-python-client google-auth google-auth-oauthlib` (YouTube).
 
+**Freigabe wird durchgesetzt:** `publish.py` liest die Bewertung des Creative
+Directors (`director_review.md`) und postet Plattformen, die er als
+`⚠️ NACHBESSERN` markiert hat, **nicht** – es sei denn, du überstimmst mit
+`--force`. So ist die „finale Freigabe-Instanz" auch beim Posten wirksam.
+
 ## Video-Assembly (optional)
 
 Baut aus dem Post-Production-Schnittplan eine fertige `.mp4` – dein iPhone-Material

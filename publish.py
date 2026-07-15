@@ -22,6 +22,7 @@ from pathlib import Path
 from agency.config import ROOT
 from agency.platforms import ALL_PLATFORMS
 from agency.publishing import get_publisher
+from agency.publishing.approval import load_approvals
 from agency.publishing.credentials import load_credentials
 from agency.publishing.loader import load_post
 
@@ -44,6 +45,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="ECHT posten statt Dry-Run (nach außen wirksam, irreversibel).")
     p.add_argument("--yes", action="store_true",
                    help="Bestätigungs-Rückfrage im Live-Modus überspringen (Vorsicht).")
+    p.add_argument("--force", action="store_true",
+                   help="Auch Plattformen posten, die der Creative Director als "
+                        "'⚠️ NACHBESSERN' markiert hat.")
     p.add_argument("--ig-media-url", default=None,
                    help="Öffentlich gehostete Medien-URL für Instagram.")
     p.add_argument("--yt-video", default=None, help="Pfad zur fertigen YouTube-Videodatei.")
@@ -72,12 +76,23 @@ def main(argv: list[str] | None = None) -> int:
 
     platforms = ALL_PLATFORMS if args.platform == "all" else [args.platform]
     creds = load_credentials()
+    approvals = load_approvals(day_dir)
     mode = "LIVE" if args.live else "DRY-RUN"
     print(f"Paket: {day_dir.name} · Modus: {mode} · Plattformen: {', '.join(platforms)}\n")
 
     any_error = False
     for pk in platforms:
         pub = get_publisher(pk)
+
+        # Freigabe des Creative Directors durchsetzen.
+        approval = approvals.get(pk, {})
+        if approval.get("approved") is False and not args.force:
+            print(f"• {pub.name}: ⛔ vom Creative Director als NACHBESSERN markiert "
+                  "– übersprungen (mit --force überstimmbar).")
+            continue
+        if approval.get("approved") is None:
+            print(f"• {pub.name}: ℹ️  kein Director-Urteil vorhanden.")
+
         post = load_post(day_dir, pk, variant=args.variant)
         if pk == "instagram" and args.ig_media_url:
             post.media_urls = [args.ig_media_url]
