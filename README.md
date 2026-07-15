@@ -160,6 +160,22 @@ bekommen automatisch Stille; die Musik läuft leiser darunter. Der Scaffold
 übernimmt die generierten B-Roll-Clips und verteilt die Untertitel aus dem
 Schnitt-Briefing – du fügst nur dein eigenes Material und die Musikdatei ein.
 
+## Dashboard
+
+Eine lokale HTML-Übersicht (kein Server, kein Netz) über den ganzen Betrieb:
+erzeugte Pakete mit Freigabe-/Compliance-Status (Bereit/Blockiert/Gepostet),
+was gepostet wurde und die YouTube-Performance.
+
+```bash
+python dashboard.py
+python dashboard.py --open
+```
+
+Schreibt `dashboard.html` (im Browser öffnen bzw. `--open` auf macOS). Der
+Status je Plattform ergibt sich aus dem Director-Urteil, dem Compliance-Report
+und dem Post-Log (`monitoring/post_log.json`, das `publish.py --live`
+automatisch füllt). Einfach neu ausführen, um zu aktualisieren.
+
 ## Monitoring / Performance-Überwachung
 
 Verfolgt, wie gut veröffentlichte YouTube-Videos ankommen, und schließt die

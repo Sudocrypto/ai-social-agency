@@ -8,6 +8,9 @@
 # Monitoring-Daten (getrackte Videos, Reports)
 /monitoring/
 
+# Generiertes Dashboard
+dashboard.html
+
 # Python
 __pycache__/
 *.py[cod]

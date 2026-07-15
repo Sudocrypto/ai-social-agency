@@ -25,6 +25,7 @@ from agency.publishing import get_publisher
 from agency.publishing.approval import load_approvals, load_compliance
 from agency.publishing.credentials import load_credentials
 from agency.publishing.loader import load_post
+from agency.publishing.post_log import record_post
 
 OUTPUT_ROOT = ROOT / "output"
 
@@ -122,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
         result = pub.publish(post, creds, dry_run=not do_live)
         icon = "✅" if result.ok else "❌"
         print(f"• {pub.name}: {icon} {result.action}")
+        if do_live and result.ok:
+            record_post(pk, result.url, day_dir.name)  # fürs Dashboard protokollieren
         if result.url:
             print(f"    → {result.url}")
         for w in result.warnings:
