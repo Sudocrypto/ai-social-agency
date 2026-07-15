@@ -101,6 +101,27 @@ kein gehostetes Medium bzw. kein fertiges Video übergeben wird – so postet ni
 Unvollständiges. Optionale Live-Abhängigkeiten: `tweepy` (X),
 `google-api-python-client google-auth google-auth-oauthlib` (YouTube).
 
+## Video-Assembly (optional)
+
+Baut aus dem Post-Production-Schnittplan eine fertige `.mp4` – dein iPhone-Material
++ KI-B-Roll aneinandergehängt, Untertitel eingebrannt, Musik untergemischt (via
+**ffmpeg**). Der eigentliche Render läuft lokal (ffmpeg installiert).
+
+```bash
+python assemble.py --platform youtube               # 1) legt editierbares assembly.json an
+#   -> assembly.json bearbeiten: eigene Clip-Pfade, Timings, Untertitel, MUSIK.mp3
+python assemble.py --platform youtube               # 2) Dry-Run: zeigt ffmpeg-Kommando + SRT
+python assemble.py --platform youtube --render      # 3) rendert final.mp4
+python assemble.py --platform instagram --scaffold  # assembly.json neu erzeugen
+```
+
+`assembly.json` (pro Plattform, in `output/{datum}/{plattform}/`) beschreibt jedes
+Segment (`source`, `start`, `end`, `subtitle`, `mute`), Musik (`gain_db`) und das
+Zielformat (YouTube 1920×1080, sonst 1080×1920). Stumme Segmente (KI-B-Roll)
+bekommen automatisch Stille; die Musik läuft leiser darunter. Der Scaffold
+übernimmt die generierten B-Roll-Clips und verteilt die Untertitel aus dem
+Schnitt-Briefing – du fügst nur dein eigenes Material und die Musikdatei ein.
+
 ## Tests
 
 Offline-Regressionssuite (gestubbtes LLM, kein API-Key nötig):
