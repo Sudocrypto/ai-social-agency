@@ -5,6 +5,11 @@
 #
 # Kein Finanz-/Anlagethema -> keine BaFin/Anonymitäts-Bremse. Du kannst sofort
 # posten. Einzige echte Pflicht: Affiliate/Werbung klar kennzeichnen.
+#
+# WICHTIG (deutsches Werberecht, §5a UWG): Sobald ein Tool empfohlen wird, muss
+# entweder klar "Werbung"/"Anzeige" dranstehen ODER ausdrücklich Unabhängigkeit
+# erklärt sein ("unbezahlt, keine Kooperation"). Der Disclaimer unten setzt den
+# sicheren Default: jede Tool-Nennung gilt als gekennzeichnete Werbung.
 
 # --- Marken-Identität (Name/Handle nach Wunsch ändern) ---
 brand_name: "KI Kompakt"             # -> Marken-Hashtag #KIKompakt
@@ -24,11 +29,13 @@ tonalität: "sachlich-begeistert, ehrlich, hilfreich – kein Clickbait, keine W
 compliance:
   enabled: true
   disclaimer: >-
-    Hinweis: Enthält ggf. Affiliate-Links – wenn du darüber ein Tool holst,
-    unterstützt du den Kanal, für dich ohne Aufpreis. Keine Garantie für
-    bestimmte Ergebnisse; teste Tools selbst.
+    Werbung: Dieses Video nennt Tools und enthält ggf. Affiliate-Links – holst du
+    ein Tool darüber, unterstützt du den Kanal, für dich ohne Aufpreis. Keine
+    Garantie für bestimmte Ergebnisse; teste Tools selbst.
   regeln:
-    - "Affiliate-/bezahlte Empfehlungen klar als 'Werbung' kennzeichnen – kein Verstecken."
+    - "Jede Tool-Empfehlung eindeutig kennzeichnen: entweder 'Werbung'/'Anzeige' im
+       Text/Video ODER ausdrücklich 'unbezahlt, keine Kooperation'. Nie ungekennzeichnet
+       lassen – im Zweifel als 'Werbung' labeln (sicherer Default)."
     - "Keine unrealistischen Versprechen ('verdiene sofort', 'automatisch reich', 'ersetzt X komplett')."
     - "Tool-Funktionen ehrlich darstellen – nichts erfinden, was das Tool nicht kann."
     - "Preise/Gratis-Status nur nennen, wenn aktuell korrekt (oder 'Stand kann sich ändern')."

@@ -72,9 +72,12 @@ class BaseAgent:
         b = ctx.config.brand
         pillars = "\n".join(f"  - {p}" for p in ctx.config.content_pillars)
         base = (
-            f"MARKE: {b.get('brand_name', '')} ({b.get('handle', '')})\n"
+            f"MARKE / KANAL: {b.get('brand_name', '')} ({b.get('handle', '')})\n"
             f"MARKEN-HASHTAG (immer exakt so schreiben, niemals abkürzen oder abwandeln): "
             f"{ctx.config.branded_hashtag}\n"
+            f"WICHTIG: Der Marken-Hashtag ist ein HASHTAG zum Taggen/zur Auffindbarkeit, "
+            f"KEIN Kanal. 'Abonnieren'/'Folgen'-CTAs beziehen sich auf den Kanal bzw. das "
+            f"Handle {b.get('handle', '')} – niemals 'folge dem Hashtag'.\n"
             f"THEMA: {b.get('thema', '')}\n"
             f"SPRACHE/STIL: {b.get('sprache', '')}\n"
             f"TONALITÄT: {b.get('tonalität', '')}\n"
