@@ -29,13 +29,17 @@ tonalität: "sachlich-begeistert, ehrlich, hilfreich – kein Clickbait, keine W
 compliance:
   enabled: true
   disclaimer: >-
-    Werbung: Dieses Video nennt Tools und enthält ggf. Affiliate-Links – holst du
-    ein Tool darüber, unterstützt du den Kanal, für dich ohne Aufpreis. Keine
-    Garantie für bestimmte Ergebnisse; teste Tools selbst.
+    Werbung. Dieses Video enthält Produktempfehlungen und Affiliate-Links – nutzt
+    du einen Link, unterstützt du den Kanal, für dich ohne Aufpreis. Keine Garantie
+    für bestimmte Ergebnisse; teste Tools selbst.
   regeln:
-    - "Jede Tool-Empfehlung eindeutig kennzeichnen: entweder 'Werbung'/'Anzeige' im
-       Text/Video ODER ausdrücklich 'unbezahlt, keine Kooperation'. Nie ungekennzeichnet
-       lassen – im Zweifel als 'Werbung' labeln (sicherer Default)."
+    - "Werbekennzeichnung IMMER unbedingt und unmissverständlich: den GESAMTEN Beitrag
+       pauschal mit dem Label 'Werbung' kennzeichnen (sicherer Default für einen
+       monetarisierten Kanal). KEINE konditionalen Formeln ('sofern eine Kooperation
+       besteht', 'ggf.', 'falls bezahlt') – die sind nach §5a UWG / MStV unzureichend."
+    - "NIEMALS behaupten, welche einzelnen Tools bezahlte Kooperationen sind (oder nicht) –
+       das weiß nur der Kanalbetreiber. Die pauschale 'Werbung'-Kennzeichnung deckt beide
+       Fälle sicher ab; keine tool-genauen Kooperations-Zuordnungen erfinden."
     - "Keine unrealistischen Versprechen ('verdiene sofort', 'automatisch reich', 'ersetzt X komplett')."
     - "Keine absoluten/garantierten Aussagen über Tool-Fähigkeiten ('nie', 'immer', 'garantiert',
        '100%', 'komplett', 'keine Fehler/Halluzinationen'). Immer relativieren ('deutlich weniger',

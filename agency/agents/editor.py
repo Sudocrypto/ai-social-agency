@@ -36,6 +36,11 @@ class Editor(BaseAgent):
             "'einen Großteil'). Das ist Pflicht, auch wenn sich dadurch die Aussage "
             "leicht ändert – sonst irreführende Werbung (§5 UWG). Ausnahme: harmlose "
             "Nicht-Leistungsaussagen ('komplett kostenlos', 'immer dienstags') bleiben.\n"
+            "- WERBEKENNZEICHNUNG (Pflicht): Ersetze jede KONDITIONALE Kennzeichnung "
+            "('als Werbung gekennzeichnet, sofern eine Kooperation besteht', 'ggf. Werbung', "
+            "'falls bezahlt') durch ein unbedingtes, eindeutiges Label 'Werbung' für den "
+            "gesamten Beitrag. Entferne Behauptungen darüber, welche einzelnen Tools bezahlt "
+            "sind oder nicht – 'sofern'-Formeln sind nach §5a UWG unzureichend.\n"
             "- Keine Kommentare, keine Erklärungen – gib NUR den korrigierten Text zurück."
         )
 
