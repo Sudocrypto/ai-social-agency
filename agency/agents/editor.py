@@ -27,6 +27,15 @@ class Editor(BaseAgent):
             "(## Plattform / ### Post / **Hook** / **Text** / **CTA** / **Hashtags**).\n"
             "- Wahre die Markenstimme (locker, direkt, Ich-Perspektive) – kein Glattbügeln "
             "zu Corporate.\n"
+            "- COMPLIANCE-LINT (Pflicht, erlaubte Ausnahme vom 'Aussage nicht ändern'): "
+            "Suche gezielt nach absoluten/garantierten Aussagen über Tool- oder "
+            "Produkt-Fähigkeiten – vor allem die Wörter 'nie', 'immer', 'garantiert', "
+            "'100%', 'komplett', 'vollständig', 'jede/r/s', 'keinerlei', 'null Fehler', "
+            "'keine Halluzinationen', 'ersetzt … komplett'. Formuliere JEDE solche Stelle "
+            "in eine relativierte Aussage um ('in der Regel', 'meist', 'deutlich weniger', "
+            "'einen Großteil'). Das ist Pflicht, auch wenn sich dadurch die Aussage "
+            "leicht ändert – sonst irreführende Werbung (§5 UWG). Ausnahme: harmlose "
+            "Nicht-Leistungsaussagen ('komplett kostenlos', 'immer dienstags') bleiben.\n"
             "- Keine Kommentare, keine Erklärungen – gib NUR den korrigierten Text zurück."
         )
 

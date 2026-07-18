@@ -56,6 +56,30 @@ def test_parse_approvals_freigabe_mit_hinweisen_is_allowed():
     assert a["youtube"]["tier"] == "hinweise"  # aber markiert
 
 
+def test_parse_approvals_multi_post_worst_verdict_wins():
+    # Post 1 FREIGABE, Post 2 NACHBESSERN -> Plattform blockiert (strengstes Urteil).
+    md = (
+        "# Freigabe\n"
+        "### YouTube – Post 1\n**Status:** ✅ FREIGABE\n**Begründung:** ok.\n"
+        "### YouTube – Post 2\n**Status:** ⚠️ NACHBESSERN\n**Begründung:** Absolut-Claim.\n"
+    )
+    a = parse_approvals(md)
+    assert a["youtube"]["approved"] is False
+    assert a["youtube"]["tier"] == "nachbessern"
+
+
+def test_parse_approvals_multi_post_hinweise_over_freigabe():
+    # Alle postbar, aber ein Post hat Hinweise -> Plattform-Tier = hinweise.
+    md = (
+        "# Freigabe\n"
+        "### YouTube – Post 1\n**Status:** ✅ FREIGABE\n"
+        "### YouTube – Post 2\n**Status:** 🟡 FREIGABE MIT HINWEISEN\n"
+    )
+    a = parse_approvals(md)
+    assert a["youtube"]["approved"] is True
+    assert a["youtube"]["tier"] == "hinweise"
+
+
 def test_load_approvals(tmp_path):
     (tmp_path / "director_review.md").write_text(DIRECTOR_MD, encoding="utf-8")
     a = load_approvals(tmp_path)

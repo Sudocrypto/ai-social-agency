@@ -26,24 +26,40 @@ def parse_approvals(director_md: str) -> dict[str, dict]:
     Rückgabe: {platform_key: {"approved": bool | None, "status": str, "tier": str}}
     approved ist None, wenn kein Urteil vorliegt.
     """
+    # Eine Plattform kann mehrere Posts haben ("### YouTube – Post 1/2"). Pro
+    # Plattform gilt das strengste Urteil: ein NACHBESSERN blockiert die ganze
+    # Plattform (sichere Default-Richtung); der erste Status-Treffer je Abschnitt zählt.
     result: dict[str, dict] = {}
     current: str | None = None
+    section_done = False  # erster Status im aktuellen Abschnitt schon gelesen?
+
+    def _apply(pk: str, tier: str, status: str) -> None:
+        rank = {"nachbessern": 2, "hinweise": 1, "freigabe": 0}
+        prev = result.get(pk)
+        if prev is None or rank[tier] > rank[prev["tier"]]:
+            result[pk] = {
+                "approved": tier != "nachbessern",
+                "status": status,
+                "tier": tier,
+            }
 
     for line in (director_md or "").splitlines():
         m = _HEADING.match(line)
         if m:
-            heading = m.group(1).strip().lower()
-            current = _match_platform(heading)
+            current = _match_platform(m.group(1).strip().lower())
+            section_done = False
             continue
-        if current and current not in result:
+        if current and not section_done:
             up = line.upper()
             if "NACHBESSERN" in up:
-                result[current] = {"approved": False, "status": line.strip(), "tier": "nachbessern"}
+                _apply(current, "nachbessern", line.strip())
+                section_done = True
             elif "HINWEISEN" in up or "🟡" in line:
-                # "FREIGABE MIT HINWEISEN" – postbar, blockiert nicht.
-                result[current] = {"approved": True, "status": line.strip(), "tier": "hinweise"}
+                _apply(current, "hinweise", line.strip())
+                section_done = True
             elif "FREIGABE" in up or "✅" in line:
-                result[current] = {"approved": True, "status": line.strip(), "tier": "freigabe"}
+                _apply(current, "freigabe", line.strip())
+                section_done = True
 
     for pk in ALL_PLATFORMS:
         result.setdefault(pk, {"approved": None, "status": "kein Urteil", "tier": None})
