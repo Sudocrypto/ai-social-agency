@@ -87,3 +87,24 @@ def load_compliance(day_dir: Path) -> dict[str, dict]:
     f = day_dir / "compliance_report.md"
     md = f.read_text(encoding="utf-8") if f.exists() else ""
     return parse_compliance(md)
+
+
+def gate_status(day_dir: Path, platform: str) -> dict:
+    """Kombiniertes Freigabe-Gate für die Automatik.
+
+    allowed=False, sobald der Director NACHBESSERN oder die Compliance RISIKO meldet.
+    """
+    director = load_approvals(day_dir).get(platform, {}).get("approved")
+    compliance = load_compliance(day_dir).get(platform, {}).get("ok")
+    if director is False:
+        reason = "Creative Director: NACHBESSERN"
+    elif compliance is False:
+        reason = "Compliance-Prüfer: RISIKO"
+    else:
+        reason = "frei"
+    return {
+        "director": director,
+        "compliance": compliance,
+        "allowed": director is not False and compliance is not False,
+        "reason": reason,
+    }

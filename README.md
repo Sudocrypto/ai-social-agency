@@ -160,6 +160,31 @@ bekommen automatisch Stille; die Musik läuft leiser darunter. Der Scaffold
 übernimmt die generierten B-Roll-Clips und verteilt die Untertitel aus dem
 Schnitt-Briefing – du fügst nur dein eigenes Material und die Musikdatei ein.
 
+## Voll-Automatik (`auto.py`)
+
+Ein Befehl, der die ganze Kette verkettet: **Content generieren → Freigabe- &
+Compliance-Check → KI-Video rendern → zusammenschneiden → hochladen → tracken.**
+
+```bash
+python auto.py --config brand_config.crypto.yaml --pillar news --topic "Bitcoin ETF"
+python auto.py --config brand_config.crypto.yaml --pillar news --topic "Bitcoin ETF" --post
+```
+
+Die Automatik macht **so viel wie möglich** und stoppt sauber, sobald etwas fehlt:
+- ohne `FAL_KEY` → nur Text/Skript (kein KI-Video),
+- ohne `ffmpeg` → Clips liegen bereit, aber kein Schnitt,
+- ohne `--post` → Video wird gerendert, aber **nicht** hochgeladen,
+- ohne YouTube-OAuth → Upload wird sauber abgebrochen.
+
+**Sicherheits-Gate:** Alles, was der Creative Director (`⚠️ NACHBESSERN`) oder der
+Compliance-Prüfer (`⚠️ RISIKO`) markiert, wird **nicht** hochgeladen (nur mit
+`--force` überstimmbar – nicht empfohlen). Der Upload passiert ausschließlich mit
+`--post`.
+
+> ⚠️ **Finanz-/Krypto-Content nicht unbeaufsichtigt auto-posten**, bevor ein
+> Anwalt Disclaimer und Konzept geprüft hat. Bis dahin ohne `--post` fahren
+> (Video fertig, Upload manuell nach Sichtprüfung).
+
 ## Dashboard
 
 Eine lokale HTML-Übersicht (kein Server, kein Netz) über den ganzen Betrieb:

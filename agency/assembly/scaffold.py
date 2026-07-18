@@ -82,3 +82,40 @@ def scaffold_plan(
         fps=30,
         output="final.mp4",
     )
+
+
+def auto_plan(
+    day_dir: Path, platform_key: str, *,
+    music: str | None = None, clip_seconds: float = 5.0,
+) -> AssemblyPlan | None:
+    """Baut einen render-fertigen Plan OHNE Platzhalter – für die Voll-Automatik.
+
+    Nutzt ausschließlich die bereits gerenderten KI-B-Roll-Clips + die Untertitel
+    aus dem Schnitt-Briefing. Gibt None zurück, wenn keine gerenderten .mp4-Clips
+    vorliegen (dann kann nicht automatisch zusammengeschnitten werden).
+    """
+    pdir = day_dir / platform_key
+    broll = sorted((pdir / "broll").glob("*.mp4")) if (pdir / "broll").exists() else []
+    if not broll:
+        return None
+
+    pp_file = pdir / "post_production.md"
+    subs = extract_subtitles(pp_file.read_text(encoding="utf-8") if pp_file.exists() else "")
+    sub_iter = iter(subs)
+
+    segments = [
+        Segment(source=str(clip), start=0.0, end=clip_seconds,
+                subtitle=next(sub_iter, ""), mute=True)
+        for clip in broll
+    ]
+    rest = " ".join(sub_iter)
+    if rest and segments:
+        tail = segments[-1].subtitle
+        segments[-1].subtitle = (tail + " " + rest).strip() if tail else rest
+
+    width, height = (1920, 1080) if platform_key == "youtube" else (1080, 1920)
+    return AssemblyPlan(
+        segments=segments,
+        music=Music(source=music) if music else None,
+        width=width, height=height, fps=30, output="final.mp4",
+    )
