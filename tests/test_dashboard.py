@@ -84,7 +84,33 @@ def test_render_html_contains_sections(tmp_path):
     assert "<!doctype html>" in html
     assert "Dashboard" in html
     assert "2026-07-15" in html and "Instagram" in html
-    assert "Geplant" in html and "Gepostet" in html
+    assert "Als Nächstes geplant" in html and "Entwürfe" in html and "Gepostet" in html
+
+
+def test_gather_state_schedule_statuses(tmp_path):
+    import json
+
+    out = tmp_path / "output"
+    out.mkdir()
+    sched = tmp_path / "schedule.json"
+    sched.write_text(json.dumps([
+        {"package_date": "2026-01-01", "platform": "youtube", "at": "2020-01-01T09:00", "note": "alt"},
+        {"package_date": "2099-01-01", "platform": "instagram", "at": "2099-01-01T09:00", "note": ""},
+        {"package_date": "2026-07-14", "platform": "x", "at": "2099-01-01T10:00", "note": ""},
+    ]), encoding="utf-8")
+    store = tmp_path / "pl.json"
+    record_post("x", "https://x/1", "2026-07-14", store=store)
+
+    state = gather_state(out, post_log_store=store, schedule_store=sched,
+                         metrics_csv=tmp_path / "n.csv")
+    by = {(s["platform"]): s["status"] for s in state["scheduled"]}
+    assert by["youtube"] == "überfällig"     # Termin in der Vergangenheit
+    assert by["instagram"] == "geplant"      # Termin in der Zukunft
+    assert by["x"] == "gepostet"             # bereits im Post-Log
+    assert state["counts"]["termine"] == 2   # gepostete zählen nicht mehr
+
+    html = render_html(state)
+    assert "Als Nächstes geplant" in html and "Überfällig" in html
 
 
 def test_render_html_empty_state():

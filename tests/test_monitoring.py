@@ -48,6 +48,20 @@ def test_tracker_rejects_duplicate(tmp_path):
         t.add("https://youtu.be/dQw4w9WgXcQ")
 
 
+def test_tracker_remove_and_clear(tmp_path):
+    store = tmp_path / "t.json"
+    t = Tracker(store)
+    t.add("dQw4w9WgXcQ")
+    t.add("https://youtu.be/abcdefghijk")
+    assert t.remove("https://youtu.be/dQw4w9WgXcQ") is True
+    assert t.video_ids() == ["abcdefghijk"]
+    assert t.remove("dQw4w9WgXcQ") is False  # schon weg
+    # frisch laden -> persistiert
+    assert Tracker(store).video_ids() == ["abcdefghijk"]
+    assert t.clear() == 1
+    assert Tracker(store).items == []
+
+
 def test_engagement_rate():
     assert engagement_rate({"views": 1000, "likes": 100, "comments": 20}) == 12.0
     assert engagement_rate({"views": 0, "likes": 5, "comments": 5}) == 0.0  # keine Division

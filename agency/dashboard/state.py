@@ -13,6 +13,7 @@ from ..config import ROOT
 from ..platforms import ALL_PLATFORMS, spec
 from ..publishing.approval import load_approvals, load_compliance
 from ..publishing.post_log import POST_LOG, load_post_log
+from ..scheduling import SCHEDULE, load_schedule
 
 OUTPUT_ROOT = ROOT / "output"
 METRICS_CSV = ROOT / "monitoring" / "metrics.csv"
@@ -51,6 +52,7 @@ def gather_state(
     *,
     post_log_store: Path | str = POST_LOG,
     metrics_csv: Path | str = METRICS_CSV,
+    schedule_store: Path | str = SCHEDULE,
 ) -> dict:
     """Baut das Zustands-Dict fürs Dashboard."""
     output_root = Path(output_root)
@@ -85,17 +87,39 @@ def gather_state(
             if plats:
                 packages.append({"date": day.name, "platforms": plats})
 
+    # Geplante Termine mit Status (gepostet / überfällig / geplant).
+    now_iso = datetime.now().isoformat(timespec="minutes")
+    scheduled = []
+    for e in load_schedule(schedule_store):
+        key = (e.get("platform"), e.get("package_date"))
+        if key in posted:
+            st = "gepostet"
+        elif e.get("at", "") < now_iso:
+            st = "überfällig"
+        else:
+            st = "geplant"
+        scheduled.append({**e, "name": _name(e.get("platform", "")), "status": st})
+
     planned = sum(
         1 for pkg in packages for p in pkg["platforms"] if p["status"] == "bereit"
     )
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "packages": packages,
+        "scheduled": scheduled,
         "posts": sorted(posts, key=lambda p: p.get("when", ""), reverse=True),
         "performance": _perf(metrics_csv),
         "counts": {
             "pakete": len(packages),
             "geplant": planned,
+            "termine": sum(1 for s in scheduled if s["status"] != "gepostet"),
             "gepostet": len(posts),
         },
     }
+
+
+def _name(platform_key: str) -> str:
+    try:
+        return spec(platform_key).name
+    except KeyError:
+        return platform_key

@@ -8,6 +8,8 @@ _STATUS = {
     "bereit": ("Bereit", "#1a7f37", "#dafbe1"),
     "blockiert": ("Blockiert", "#b35900", "#fff1e5"),
     "gepostet": ("Gepostet", "#0969da", "#ddf4ff"),
+    "geplant": ("Geplant", "#0969da", "#ddf4ff"),
+    "überfällig": ("Überfällig", "#b35900", "#fff1e5"),
 }
 _TRI = {True: "✅", False: "⚠️", None: "–"}
 
@@ -63,6 +65,30 @@ def _rows_planned(packages: list[dict]) -> str:
     return (
         "<table><thead><tr><th>Datum</th><th>Plattform</th><th>Director</th>"
         "<th>Compliance</th><th>Status</th></tr></thead><tbody>"
+        + "".join(rows) + "</tbody></table>"
+    )
+
+
+def _rows_scheduled(scheduled: list[dict]) -> str:
+    if not scheduled:
+        return ('<p class="empty">Nichts terminiert. '
+                "Mit schedule.py add einen Termin anlegen.</p>")
+    rows = []
+    for e in scheduled:
+        label, fg, bg = _STATUS[e["status"]]
+        note = escape(e.get("note", "") or "")
+        rows.append(
+            "<tr>"
+            f"<td>{escape(e.get('at', ''))}</td>"
+            f"<td>{escape(e.get('name', ''))}</td>"
+            f"<td>{escape(e.get('package_date', ''))}</td>"
+            f'<td><span class="badge" style="color:{fg};background:{bg}">{label}</span></td>'
+            f"<td>{note}</td>"
+            "</tr>"
+        )
+    return (
+        "<table><thead><tr><th>Termin</th><th>Plattform</th><th>Paket</th>"
+        "<th>Status</th><th>Notiz</th></tr></thead><tbody>"
         + "".join(rows) + "</tbody></table>"
     )
 
@@ -123,10 +149,13 @@ def render_html(state: dict) -> str:
 <div class="sub">Stand: {escape(state['generated_at'])}</div>
 <div class="tiles">
   <div class="tile"><div class="n">{c['pakete']}</div><div class="l">Pakete</div></div>
-  <div class="tile"><div class="n">{c['geplant']}</div><div class="l">Bereit / geplant</div></div>
+  <div class="tile"><div class="n">{c['geplant']}</div><div class="l">Bereit</div></div>
+  <div class="tile"><div class="n">{c.get('termine', 0)}</div><div class="l">Termine</div></div>
   <div class="tile"><div class="n">{c['gepostet']}</div><div class="l">Gepostet</div></div>
 </div>
-<h2>Geplant &amp; Entwürfe</h2>
+<h2>Als Nächstes geplant</h2>
+{_rows_scheduled(state.get('scheduled', []))}
+<h2>Entwürfe &amp; Freigabe</h2>
 {_rows_planned(state['packages'])}
 <h2>Gepostet</h2>
 {_rows_posted(state['posts'])}

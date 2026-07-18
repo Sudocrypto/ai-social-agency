@@ -176,6 +176,17 @@ Status je Plattform ergibt sich aus dem Director-Urteil, dem Compliance-Report
 und dem Post-Log (`monitoring/post_log.json`, das `publish.py --live`
 automatisch füllt). Einfach neu ausführen, um zu aktualisieren.
 
+**Termine planen** (erscheinen im Dashboard unter „Als Nächstes geplant"):
+
+```bash
+python schedule.py add 2026-07-20 youtube "2026-07-20 09:00" --note "Bitcoin ETF"
+python schedule.py list
+python schedule.py remove 0
+```
+
+Ein Termin ist eine Erinnerung – es wird **nichts automatisch gepostet**; das
+machst du bewusst per `publish.py`.
+
 ## Monitoring / Performance-Überwachung
 
 Verfolgt, wie gut veröffentlichte YouTube-Videos ankommen, und schließt die
@@ -186,6 +197,8 @@ Schleife zurück zum Growth-Analysten. Braucht nur einen **YouTube-Data-API-Key*
 python monitor.py add "https://youtu.be/XXXXXXXXXXX" --thema "Bitcoin ETF"
 python monitor.py list
 python monitor.py fetch
+python monitor.py remove XXXXXXXXXXX
+python monitor.py clear
 ```
 
 `fetch` ruft Views/Likes/Kommentare ab und schreibt `monitoring/report.md`
@@ -239,6 +252,12 @@ pytest
 Deckt ab: Modell-Routing (Opus/Sonnet), Plattform-Split, SEO-Parsing in
 `meta.json`, Video-Prompt-Parsing + Kosten-Cap und die komplette
 Output-Struktur.
+
+## Abschluss & Übergabe
+
+Was fertig ist und was für den echten Firmenbetrieb noch bei dir liegt (API-Tokens,
+Anwalt, Steuerberater) – inkl. fertiger Fragenlisten für die Termine:
+**[`docs/ABSCHLUSS.md`](docs/ABSCHLUSS.md)**.
 
 ## Architektur
 

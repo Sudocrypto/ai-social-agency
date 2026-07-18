@@ -77,3 +77,21 @@ class Tracker:
 
     def video_ids(self) -> list[str]:
         return [i.video_id for i in self.items]
+
+    def remove(self, url_or_id: str) -> bool:
+        """Entfernt ein Video aus dem Tracking. True, wenn etwas entfernt wurde."""
+        try:
+            vid = parse_video_id(url_or_id)
+        except ValueError:
+            vid = url_or_id
+        before = len(self.items)
+        self.items = [i for i in self.items if i.video_id != vid]
+        self.save()
+        return len(self.items) < before
+
+    def clear(self) -> int:
+        """Leert das komplette Tracking. Gibt die Anzahl entfernter Einträge zurück."""
+        n = len(self.items)
+        self.items = []
+        self.save()
+        return n

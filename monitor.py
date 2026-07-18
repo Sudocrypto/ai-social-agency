@@ -42,6 +42,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("list", help="Getrackte Videos anzeigen.")
 
+    r = sub.add_parser("remove", help="Ein Video aus dem Tracking entfernen.")
+    r.add_argument("url", help="YouTube-URL oder Video-ID.")
+
+    sub.add_parser("clear", help="Gesamtes Tracking leeren.")
+
     f = sub.add_parser("fetch", help="Stats abrufen + Report/CSV schreiben.")
     f.add_argument("--out", default=str(MON_DIR / "report.md"))
     f.add_argument("--csv", default=str(MON_DIR / "metrics.csv"))
@@ -67,6 +72,16 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         for i in tracker.items:
             print(f"- {i.video_id}  {i.thema or '—'}  ({i.added_at})  {i.url}")
+        return 0
+
+    if args.cmd == "remove":
+        removed = tracker.remove(args.url)
+        print("✅ entfernt." if removed else "Nichts entfernt (nicht getrackt).")
+        return 0 if removed else 1
+
+    if args.cmd == "clear":
+        n = tracker.clear()
+        print(f"✅ Tracking geleert ({n} Einträge entfernt).")
         return 0
 
     if args.cmd == "fetch":
