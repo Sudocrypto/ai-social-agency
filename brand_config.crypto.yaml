@@ -36,6 +36,7 @@ compliance:
     - "Keine Dringlichkeit/FOMO ('nur heute', 'letzte Chance', 'bevor es explodiert')."
     - "Werbung, Affiliate-Links und Kooperationen transparent kennzeichnen (Werbung/Anzeige)."
     - "Keine Kursmanipulation, kein Pump, keine unbelegten Behauptungen – Quellen nennen, wenn Zahlen genannt werden."
+    - "Keine absoluten/garantierten Aussagen ('nie', 'immer', 'garantiert', '100%', 'sicher') – immer relativieren, sonst irreführende Werbung (§5 UWG)."
 
 # --- Modell-Einstellungen ---
 models:

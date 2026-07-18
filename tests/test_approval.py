@@ -45,6 +45,17 @@ def test_parse_approvals_missing_platform_is_unknown():
     assert a["instagram"]["approved"] is None  # kein Urteil
 
 
+def test_parse_approvals_freigabe_mit_hinweisen_is_allowed():
+    md = (
+        "# Freigabe\n### YouTube\n"
+        "**Status:** 🟡 FREIGABE MIT HINWEISEN\n"
+        "**Begründung:** Postbar, Hook könnte schärfer sein.\n"
+    )
+    a = parse_approvals(md)
+    assert a["youtube"]["approved"] is True  # postbar
+    assert a["youtube"]["tier"] == "hinweise"  # aber markiert
+
+
 def test_load_approvals(tmp_path):
     (tmp_path / "director_review.md").write_text(DIRECTOR_MD, encoding="utf-8")
     a = load_approvals(tmp_path)

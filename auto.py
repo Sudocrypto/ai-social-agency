@@ -82,6 +82,9 @@ def main(argv: list[str] | None = None) -> int:
         _log("      ⛔ Blockiert – kein Upload. (Mit --force überstimmbar, nicht empfohlen.)")
         _log(f"      Prüfe {day_dir/'director_review.md'} und {day_dir/'compliance_report.md'}.")
         return 1
+    if gate["allowed"]:
+        note = " (Tipps im director_review.md)" if gate.get("tier") == "hinweise" else ""
+        _log(f"      ✅ Freigabe erteilt – Upload läuft.{note}")
 
     # 3) KI-Video rendern -> zusammenschneiden ---------------------------------
     if not cfg.fal_key:

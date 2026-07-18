@@ -33,6 +33,13 @@ def test_gate_blocks_on_director(tmp_path):
     assert g["allowed"] is False and "NACHBESSERN" in g["reason"]
 
 
+def test_gate_allows_freigabe_mit_hinweisen(tmp_path):
+    day = _day(tmp_path, "🟡 FREIGABE MIT HINWEISEN", "✅ OK")
+    g = gate_status(day, "youtube")
+    assert g["allowed"] is True  # postbar, blockiert nicht
+    assert g["tier"] == "hinweise" and "Hinweisen" in g["reason"]
+
+
 def test_gate_blocks_on_compliance(tmp_path):
     day = _day(tmp_path, "✅ FREIGABE", "⚠️ RISIKO")
     g = gate_status(day, "youtube")

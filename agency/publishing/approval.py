@@ -17,8 +17,14 @@ _HEADING = re.compile(r"^#{1,6}\s+(.*)$")
 def parse_approvals(director_md: str) -> dict[str, dict]:
     """Ordnet jeder Plattform ihren Freigabe-Status zu.
 
-    Rückgabe: {platform_key: {"approved": bool | None, "status": str}}
-    approved=True bei FREIGABE, False bei NACHBESSERN, None wenn kein Urteil.
+    Drei Stufen des Directors:
+      ✅ FREIGABE                -> approved=True,  tier="freigabe"
+      🟡 FREIGABE MIT HINWEISEN  -> approved=True,  tier="hinweise" (postbar, Tipps fürs
+                                    nächste Mal – blockiert NICHT)
+      ⚠️ NACHBESSERN             -> approved=False, tier="nachbessern" (echter Blocker)
+
+    Rückgabe: {platform_key: {"approved": bool | None, "status": str, "tier": str}}
+    approved ist None, wenn kein Urteil vorliegt.
     """
     result: dict[str, dict] = {}
     current: str | None = None
@@ -32,12 +38,15 @@ def parse_approvals(director_md: str) -> dict[str, dict]:
         if current and current not in result:
             up = line.upper()
             if "NACHBESSERN" in up:
-                result[current] = {"approved": False, "status": line.strip()}
+                result[current] = {"approved": False, "status": line.strip(), "tier": "nachbessern"}
+            elif "HINWEISEN" in up or "🟡" in line:
+                # "FREIGABE MIT HINWEISEN" – postbar, blockiert nicht.
+                result[current] = {"approved": True, "status": line.strip(), "tier": "hinweise"}
             elif "FREIGABE" in up or "✅" in line:
-                result[current] = {"approved": True, "status": line.strip()}
+                result[current] = {"approved": True, "status": line.strip(), "tier": "freigabe"}
 
     for pk in ALL_PLATFORMS:
-        result.setdefault(pk, {"approved": None, "status": "kein Urteil"})
+        result.setdefault(pk, {"approved": None, "status": "kein Urteil", "tier": None})
     return result
 
 
@@ -94,16 +103,21 @@ def gate_status(day_dir: Path, platform: str) -> dict:
 
     allowed=False, sobald der Director NACHBESSERN oder die Compliance RISIKO meldet.
     """
-    director = load_approvals(day_dir).get(platform, {}).get("approved")
+    approval = load_approvals(day_dir).get(platform, {})
+    director = approval.get("approved")
+    tier = approval.get("tier")
     compliance = load_compliance(day_dir).get(platform, {}).get("ok")
     if director is False:
         reason = "Creative Director: NACHBESSERN"
     elif compliance is False:
         reason = "Compliance-Prüfer: RISIKO"
+    elif tier == "hinweise":
+        reason = "frei (Director: mit Hinweisen)"
     else:
         reason = "frei"
     return {
         "director": director,
+        "tier": tier,
         "compliance": compliance,
         "allowed": director is not False and compliance is not False,
         "reason": reason,
