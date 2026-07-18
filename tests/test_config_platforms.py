@@ -24,6 +24,17 @@ def test_branded_hashtag(cfg):
     assert cfg.branded_hashtag == "#DaniloTakesOff"
 
 
+def test_ki_brand_config_loads():
+    from agency.config import ROOT, load_config
+
+    cfg = load_config(ROOT / "brand_config.ki.yaml")
+    assert cfg.brand_name == "KI Kompakt"
+    assert cfg.branded_hashtag == "#KIKompakt"
+    assert cfg.compliance_enabled is True
+    assert cfg.video.get("video_modus") == "full_synthetic"
+    assert len(cfg.content_pillars) == 3
+
+
 def test_branded_hashtag_in_agent_context(cfg, ctx, fake_llm):
     from agency.agents import Copywriter
 
