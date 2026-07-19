@@ -57,6 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="'say' = gratis macOS-Stimme (Default), 'fal' = KI-Stimme (kostet Cent).")
     p.add_argument("--voice-name", default=None,
                    help="Stimme: bei 'say' z. B. Anna/Markus, bei 'fal' der Voice-Name.")
+    p.add_argument("--force-voice", action="store_true",
+                   help="Stimme neu erzeugen, auch wenn schon eine existiert (kostet bei 'fal').")
     p.add_argument("--render", action="store_true",
                    help="Echt rendern statt Dry-Run (braucht ffmpeg + echte Dateien).")
     return p
@@ -83,16 +85,22 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         # Voiceover: Text -> Sprachdatei -> als Tonspur (0 dB, voller Pegel) einsetzen.
         if args.voice:
-            fal_key = load_config().fal_key if args.voice_engine == "fal" else None
             suffix = "aiff" if args.voice_engine == "say" else "mp3"
             voice_path = pdir / f"voiceover.{suffix}"
-            try:
-                synthesize(args.voice, voice_path, engine=args.voice_engine,
-                           voice=args.voice_name, api_key=fal_key)
-            except Exception as exc:
-                print(f"❌ Voiceover fehlgeschlagen: {exc}", file=sys.stderr)
-                return 1
-            print(f"🎙  Stimme erzeugt: {voice_path}")
+            # Vorhandene Stimme wiederverwenden -> spart bei --voice-engine fal jeden
+            # erneuten (kostenpflichtigen) TTS-Aufruf. Mit --force-voice neu erzeugen.
+            if voice_path.exists() and not args.force_voice:
+                print(f"🎙  Vorhandene Stimme wiederverwendet: {voice_path} "
+                      "(kein neuer TTS-Aufruf – 0 €). Neu erzeugen mit --force-voice.")
+            else:
+                fal_key = load_config().fal_key if args.voice_engine == "fal" else None
+                try:
+                    synthesize(args.voice, voice_path, engine=args.voice_engine,
+                               voice=args.voice_name, api_key=fal_key)
+                except Exception as exc:
+                    print(f"❌ Voiceover fehlgeschlagen: {exc}", file=sys.stderr)
+                    return 1
+                print(f"🎙  Stimme erzeugt: {voice_path}")
             plan.music = Music(source=str(voice_path), gain_db=0.0)
         out_path = Path(args.out) if args.out else (pdir / plan.output)
         return _render_and_report(plan, out_path, render_it=args.render)

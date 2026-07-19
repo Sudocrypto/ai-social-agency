@@ -14,7 +14,9 @@ from pathlib import Path
 from .plan import AssemblyPlan
 from .subtitles import build_srt, write_srt
 
-SRT_NAME = ".assembly_subs.srt"
+# Kein führender Punkt: ffmpeg deutet ".name" im subtitles-Filter sonst als
+# fehlende Option ("No option name near '.assembly_subs.srt'").
+SRT_NAME = "assembly_subs.srt"
 
 
 def ffmpeg_available() -> bool:

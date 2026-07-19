@@ -139,3 +139,28 @@ def test_assemble_auto_errors_without_clips(tmp_path, monkeypatch, capsys):
 
     rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
     assert rc == 2  # keine gerenderten Clips -> klarer Fehler
+
+
+def test_srt_name_has_no_leading_dot():
+    # Führender Punkt bricht den ffmpeg-subtitles-Filter ("No option name").
+    assert not SRT_NAME.startswith(".")
+
+
+def test_assemble_reuses_existing_voice_without_recharge(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-19"
+    broll = day / "youtube" / "broll"
+    broll.mkdir(parents=True)
+    (broll / "clip_01.mp4").write_bytes(b"x")
+    (day / "youtube" / "voiceover.mp3").write_bytes(b"AUDIO")  # existiert bereits
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    def boom(*a, **k):  # darf NICHT aufgerufen werden
+        raise AssertionError("synthesize hätte nicht aufgerufen werden dürfen")
+
+    monkeypatch.setattr(assemble, "synthesize", boom)
+    rc = assemble.main([
+        "--platform", "youtube", "--date", "2026-07-19", "--auto",
+        "--voice", "egal", "--voice-engine", "fal",
+    ])
+    out = capsys.readouterr().out
+    assert rc == 0 and "wiederverwendet" in out
