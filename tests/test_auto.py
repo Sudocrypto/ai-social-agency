@@ -8,6 +8,39 @@ from agency.assembly.scaffold import auto_plan
 from agency.publishing.approval import gate_status
 
 
+def test_context_records_and_flags_credit_error(cfg):
+    from agency.context import RunContext
+
+    ctx = RunContext(config=cfg, pillar="tools", platform="youtube", count=1)
+    ctx.record_error("trend_scout", "Error code: 400 - Your credit balance is too low")
+    assert ctx.errors and ctx.errors[0]["agent"] == "trend_scout"
+    assert ctx.credit_error is True
+
+
+def test_context_credit_error_false_for_other_errors(cfg):
+    from agency.context import RunContext
+
+    ctx = RunContext(config=cfg, pillar="tools", platform="youtube", count=1)
+    ctx.record_error("copywriter", "irgendein Timeout")
+    assert ctx.credit_error is False
+
+
+def test_pipeline_records_step_errors(cfg):
+    from agency.context import RunContext
+    from agency.pipeline import Pipeline
+
+    class Boom:
+        key = "boom"
+        name = "Boom"
+
+        def run(self, ctx):
+            raise RuntimeError("kaputt")
+
+    ctx = RunContext(config=cfg, pillar="tools", platform="youtube", count=1)
+    Pipeline([Boom()]).run(ctx)
+    assert any(e["agent"] == "boom" and "kaputt" in e["message"] for e in ctx.errors)
+
+
 def test_cost_override_flags_parse():
     args = auto.build_parser().parse_args(
         ["--pillar", "tools", "--max-budget", "1.0", "--max-clip-seconds", "4"]

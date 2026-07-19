@@ -35,6 +35,8 @@ class RunContext:
     cost_log: list[dict] = field(default_factory=list)
     # Video-Kosten-Log: Liste von {plattform, clip, sekunden, modell, kosten_eur, gerendert}.
     video_log: list[dict] = field(default_factory=list)
+    # Fehler-Log: Liste von {agent, message} für Schritte, die abgebrochen sind.
+    errors: list[dict] = field(default_factory=list)
     # Rendern echte fal.ai-Clips? Default: nein (Dry-Run).
     render_video: bool = False
 
@@ -47,6 +49,19 @@ class RunContext:
 
     def get(self, agent_key: str, default: object = None) -> object:
         return self.outputs.get(agent_key, default)
+
+    def record_error(self, agent_key: str, message: str) -> None:
+        with self._lock:
+            self.errors.append({"agent": agent_key, "message": message})
+
+    @property
+    def credit_error(self) -> bool:
+        """True, wenn ein Fehler auf leeres Anthropic-Guthaben hindeutet."""
+        return any(
+            "credit balance" in e["message"].lower()
+            or "too low" in e["message"].lower()
+            for e in self.errors
+        )
 
     def record_cost(self, agent_key: str, model: str, in_tok: int, out_tok: int, cost: float) -> None:
         with self._lock:

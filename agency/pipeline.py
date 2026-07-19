@@ -78,6 +78,7 @@ class Pipeline:
         try:
             step.run(ctx)
         except Exception as exc:  # ein Schritt darf den Lauf nicht komplett killen
+            ctx.record_error(step.key, str(exc))
             self._log(f"    ⚠️  Fehler in {step.key}: {exc}")
 
     @staticmethod

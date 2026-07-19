@@ -84,6 +84,17 @@ def main(argv: list[str] | None = None) -> int:
     day_dir = write_package(ctx)
     _log(f"      Paket: {day_dir}  ·  LLM ~${ctx.total_cost_usd:.4f}")
 
+    # Abbruch, wenn die Content-Generierung faktisch fehlgeschlagen ist (z. B. leeres
+    # Anthropic-Guthaben): kein Publisher-/Director-Ergebnis -> nichts zum Freigeben.
+    if not ctx.get("publisher") or not ctx.get("creative_director"):
+        _log("      ❌ Content-Generierung fehlgeschlagen – kein vollständiges Paket.")
+        if ctx.credit_error:
+            _log("      Grund: Anthropic-Guthaben zu niedrig. Aufladen unter "
+                 "console.anthropic.com → Plans & Billing, dann erneut starten.")
+        elif ctx.errors:
+            _log(f"      Erster Fehler ({ctx.errors[0]['agent']}): {ctx.errors[0]['message']}")
+        return 2
+
     # 2) Sicherheits-Gate (Director + Compliance) ------------------------------
     gate = gate_status(day_dir, pk)
     _log(f"[2/5] Freigabe-Gate: {gate['reason']}")
