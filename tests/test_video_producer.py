@@ -57,4 +57,22 @@ def test_no_prompts_no_clips(ctx):
 
 def test_cost_estimate_matches_price_table():
     assert fal_client.estimate_cost_eur("veo-3.1", 8) == round(0.40 * 8, 4)
-    assert fal_client.estimate_cost_eur("seedance-2.0-fast", 5) == round(0.08 * 5, 4)
+    assert fal_client.estimate_cost_eur("seedance-2.0-fast", 5) == round(0.22 * 5, 4)
+
+
+def test_seedance_endpoint_and_arguments():
+    # Aktueller fal-Endpoint (nicht der veraltete v2/fast-Pfad).
+    assert fal_client.endpoint_for("seedance-2.0-fast") == (
+        "bytedance/seedance-2.0/fast/text-to-video"
+    )
+    # seedance verlangt duration als String (4–15 s) und stumme B-Roll.
+    args = fal_client.build_arguments("seedance-2.0-fast", "ein Clip", 6)
+    assert args["duration"] == "6" and isinstance(args["duration"], str)
+    assert args["generate_audio"] is False
+    # Unterschreitung wird auf das gültige Minimum (4 s) geklemmt.
+    assert fal_client.build_arguments("seedance-2.0-fast", "x", 2)["duration"] == "4"
+
+
+def test_veo_arguments_use_numeric_duration():
+    args = fal_client.build_arguments("veo-3.1", "ein Clip", 8)
+    assert args["duration"] == 8 and "generate_audio" not in args

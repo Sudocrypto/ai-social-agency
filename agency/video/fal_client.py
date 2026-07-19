@@ -12,17 +12,18 @@ Richtwerte fürs Budget-Tracking – nicht abrechnungsverbindlich.
 
 from __future__ import annotations
 
-# fal.ai-Endpunkt je Modell-Alias.
+# fal.ai-Endpunkt je Modell-Alias (Stand: fal.ai-Modell-IDs 2026).
 MODEL_ENDPOINTS: dict[str, str] = {
     "veo-3.1": "fal-ai/veo3.1",
-    "seedance-2.0-fast": "fal-ai/bytedance/seedance/v2/fast",
+    "seedance-2.0-fast": "bytedance/seedance-2.0/fast/text-to-video",
     "kling-3.0": "fal-ai/kling-video/v3",
 }
 
-# Grober Kostenrichtwert in EUR pro Sekunde generiertem Video (Schätzung).
+# Grober Kostenrichtwert in EUR pro Sekunde generiertem Video (Schätzung fürs
+# Budget-Tracking). seedance-2.0-fast: ~$0.24/s laut fal-Preisliste.
 PRICE_PER_SECOND_EUR: dict[str, float] = {
     "veo-3.1": 0.40,
-    "seedance-2.0-fast": 0.08,
+    "seedance-2.0-fast": 0.22,
     "kling-3.0": 0.28,
 }
 
@@ -39,6 +40,23 @@ def endpoint_for(model: str) -> str:
             f"Erlaubt: {', '.join(MODEL_ENDPOINTS)}"
         )
     return MODEL_ENDPOINTS[model]
+
+
+def build_arguments(model: str, prompt: str, seconds: int) -> dict:
+    """Baut das Argument-Dict fürs jeweilige fal-Modell.
+
+    seedance 2.0 erwartet 'duration' als String (gültig 4–15 s) und generiert
+    per Default Audio – unsere KI-B-Roll ist stumm, daher generate_audio=False.
+    Andere Modelle (veo etc.) bekommen die klassische numerische Dauer.
+    """
+    if model == "seedance-2.0-fast":
+        return {
+            "prompt": prompt,
+            "duration": str(max(4, min(15, seconds))),
+            "resolution": "720p",
+            "generate_audio": False,
+        }
+    return {"prompt": prompt, "duration": seconds}
 
 
 def render_clip(*, prompt: str, seconds: int, model: str, api_key: str) -> bytes:
@@ -62,7 +80,7 @@ def render_clip(*, prompt: str, seconds: int, model: str, api_key: str) -> bytes
 
     result = fal_client.subscribe(
         endpoint_for(model),
-        arguments={"prompt": prompt, "duration": seconds},
+        arguments=build_arguments(model, prompt, seconds),
     )
     # fal liefert i.d.R. {"video": {"url": ...}} – Struktur je Modell leicht variabel.
     video = result.get("video") or result.get("videos", [{}])[0]
