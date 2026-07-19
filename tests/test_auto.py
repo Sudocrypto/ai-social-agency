@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+import auto
 from agency.app import build_pipeline
 from agency.assembly.scaffold import auto_plan
 from agency.publishing.approval import gate_status
+
+
+def test_cost_override_flags_parse():
+    args = auto.build_parser().parse_args(
+        ["--pillar", "tools", "--max-budget", "1.0", "--max-clip-seconds", "4"]
+    )
+    assert args.max_budget == 1.0 and args.max_clip_seconds == 4
+    # Ohne Flags bleiben die Overrides None -> Config gilt unverändert.
+    d = auto.build_parser().parse_args(["--pillar", "tools"])
+    assert d.max_budget is None and d.max_clip_seconds is None
 
 
 def _day(tmp_path, director, compliance=None):

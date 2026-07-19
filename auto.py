@@ -48,6 +48,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--music", default=None, help="Optionale Hintergrundmusik-Datei.")
     p.add_argument("--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     p.add_argument("--no-websearch", action="store_true")
+    p.add_argument("--max-budget", type=float, default=None,
+                   help="Video-Budget-Cap in EUR NUR für diesen Lauf (überschreibt Config).")
+    p.add_argument("--max-clip-seconds", type=int, default=None,
+                   help="Max. Clip-Länge in Sekunden NUR für diesen Lauf (überschreibt Config).")
     p.add_argument("--post", action="store_true",
                    help="Am Ende WIRKLICH hochladen (sonst nur bis zum fertigen Video).")
     p.add_argument("--force", action="store_true",
@@ -61,6 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     if not cfg.anthropic_api_key:
         _log("FEHLER: ANTHROPIC_API_KEY fehlt (.env).")
         return 2
+    # Kosten-Overrides nur für diesen Lauf (Config bleibt unverändert).
+    if args.max_budget is not None:
+        cfg.video["max_video_budget_eur"] = args.max_budget
+    if args.max_clip_seconds is not None:
+        cfg.video["max_clip_sekunden"] = args.max_clip_seconds
     pk = args.platform
 
     # 1) Content generieren (mit Video-Rendern, falls FAL_KEY vorhanden) -------
