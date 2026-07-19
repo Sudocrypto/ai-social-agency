@@ -100,6 +100,39 @@ def clips_plan(
     )
 
 
+def media_plan(
+    media_paths: list[Path | str], *,
+    seconds: float = 4.0, platform_key: str = "youtube",
+    voice_path: Path | str | None = None, music_path: Path | str | None = None,
+    music_gain_db: float = -6.0,
+) -> AssemblyPlan:
+    """Render-Plan aus EIGENEM Material (Fotos + Videos), optional Stimme oder Musik.
+
+    Fotos werden stumm zu Clips; Videos behalten ihren Ton nur, wenn KEINE
+    Stimme/Musik als eigene Tonspur gesetzt ist (sonst wären zwei Tonspuren).
+    """
+    from .builder import is_image
+
+    width, height = (1920, 1080) if platform_key == "youtube" else (1080, 1920)
+    has_track = bool(voice_path or music_path)
+    segs = [
+        Segment(
+            source=str(p), start=0.0, end=seconds, subtitle="",
+            mute=is_image(str(p)) or has_track,
+        )
+        for p in media_paths
+    ]
+    if voice_path:
+        music = Music(source=str(voice_path), gain_db=0.0)      # Stimme voll
+    elif music_path:
+        music = Music(source=str(music_path), gain_db=music_gain_db)
+    else:
+        music = None
+    return AssemblyPlan(
+        segments=segs, music=music, width=width, height=height, fps=30, output="final.mp4",
+    )
+
+
 def single_clip_plan(
     clip_path: Path | str, *,
     seconds: float = 4.0, platform_key: str = "youtube", voice_path: Path | str | None = None,

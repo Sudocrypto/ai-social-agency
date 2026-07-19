@@ -19,6 +19,13 @@ from .subtitles import build_srt, write_srt
 # fehlende Option ("No option name near '.assembly_subs.srt'").
 SRT_NAME = "assembly_subs.srt"
 
+# Standbilder werden zu einem Clip "geloopt" (anderes ffmpeg-Input-Handling als Video).
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".heic"}
+
+
+def is_image(source: str) -> bool:
+    return Path(source).suffix.lower() in IMAGE_EXTS
+
 
 def ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
@@ -97,7 +104,11 @@ def build_command(
     has_subs = burn_subtitles and bool(build_srt(plan).strip())
     args: list[str] = ["ffmpeg", "-y"]
     for seg in plan.segments:
-        args += ["-ss", str(seg.start), "-t", str(seg.duration), "-i", seg.source]
+        if is_image(seg.source):
+            # Standbild -> N Sekunden Video: -loop 1 + -t Dauer.
+            args += ["-loop", "1", "-t", str(seg.duration), "-i", seg.source]
+        else:
+            args += ["-ss", str(seg.start), "-t", str(seg.duration), "-i", seg.source]
     if plan.music:
         args += ["-i", plan.music.source]
 

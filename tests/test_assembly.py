@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import assemble
-from agency.assembly.builder import SRT_NAME, build_command, render
+import mymedia
+from agency.assembly.builder import SRT_NAME, build_command, is_image, render
 from agency.assembly.plan import AssemblyPlan, Music, Segment
 from agency.assembly.scaffold import (
     clips_plan,
     extract_subtitles,
+    media_plan,
     scaffold_plan,
     single_clip_plan,
 )
@@ -174,6 +176,52 @@ def test_clips_plan_multiple_scenes_in_order():
     assert all(s.mute for s in plan.segments)
     assert plan.total_duration == 12  # 3 Szenen à 4s
     assert plan.music and plan.music.gain_db == 0.0
+
+
+def test_is_image_detection():
+    assert is_image("foto.JPG") and is_image("bild.png") and is_image("x.heic")
+    assert not is_image("clip.mp4") and not is_image("video.mov")
+
+
+def test_build_command_loops_images():
+    plan = AssemblyPlan(segments=[
+        Segment(source="foto.jpg", start=0, end=4, mute=True),
+        Segment(source="clip.mp4", start=0, end=4, mute=True),
+    ])
+    cmd = build_command(plan, "out.mp4")
+    s = " ".join(cmd)
+    assert "-loop 1 -t 4 -i foto.jpg" in s      # Foto wird geloopt
+    assert "-ss 0 -t 4 -i clip.mp4" in s        # Video normal getrimmt
+
+
+def test_media_plan_photo_muted_video_keeps_audio_without_track():
+    plan = media_plan(["foto.jpg", "clip.mp4"], seconds=4)
+    photo = next(s for s in plan.segments if s.source == "foto.jpg")
+    video = next(s for s in plan.segments if s.source == "clip.mp4")
+    assert photo.mute is True                    # Foto immer stumm
+    assert video.mute is False                   # Video behält Ton (keine Stimme/Musik)
+    assert plan.music is None
+
+
+def test_media_plan_mutes_video_when_voice_present():
+    plan = media_plan(["clip.mp4"], seconds=4, voice_path="v.mp3")
+    assert plan.segments[0].mute is True         # Stimme -> Video stumm
+    assert plan.music and plan.music.gain_db == 0.0
+
+
+def test_mymedia_errors_on_missing_files(tmp_path, capsys):
+    rc = mymedia.main(["--media", str(tmp_path / "gibtsnicht.mp4")])
+    assert rc == 2 and "nicht gefunden" in capsys.readouterr().err
+
+
+def test_mymedia_dry_run_builds_plan(tmp_path, capsys):
+    a = tmp_path / "a.jpg"
+    a.write_bytes(b"x")
+    b = tmp_path / "b.mp4"
+    b.write_bytes(b"x")
+    rc = mymedia.main(["--media", str(a), "--media", str(b), "--out", str(tmp_path / "o")])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out
 
 
 def test_srt_name_has_no_leading_dot():
