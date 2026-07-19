@@ -49,7 +49,9 @@ def _filtergraph(plan: AssemblyPlan, has_subs: bool) -> str:
     # Untertitel einbrennen (nur wenn vorhanden). Relativer Dateiname -> im
     # Arbeitsverzeichnis von ffmpeg; vermeidet Pfad-Escaping-Probleme.
     if has_subs:
-        parts.append(f"[vc]subtitles={SRT_NAME}[vout]")
+        # Dateiname EXPLIZIT als filename= – ffmpeg 8.x akzeptiert ihn nicht
+        # positional ("No option name near 'assembly_subs.srt'").
+        parts.append(f"[vc]subtitles=filename={SRT_NAME}[vout]")
     else:
         parts.append("[vc]copy[vout]")
 

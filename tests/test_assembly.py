@@ -61,7 +61,7 @@ def test_build_command_structure():
     assert "-filter_complex" in cmd
     fc = cmd[cmd.index("-filter_complex") + 1]
     assert "concat=n=2:v=1:a=1[vc][ac]" in fc
-    assert f"subtitles={SRT_NAME}" in fc          # Untertitel eingebrannt
+    assert f"subtitles=filename={SRT_NAME}" in fc  # Untertitel eingebrannt (explizit)
     assert "anullsrc" in fc                       # stummes Segment -> Stille
     assert "amix=inputs=2" in fc                  # Musik untergemischt
     assert "libx264" in cmd and "final.mp4" in cmd
