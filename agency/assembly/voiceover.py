@@ -83,5 +83,6 @@ def synthesize(
     if engine == "fal":
         if not api_key:
             raise RuntimeError("fal-Stimme braucht einen FAL_KEY in der .env.")
-        return synthesize_fal(text, out_path, api_key=api_key, voice=voice)
+        # ElevenLabs eleven-v3 ist mehrsprachig (Deutsch ok); "Aria" als Default-Timbre.
+        return synthesize_fal(text, out_path, api_key=api_key, voice=voice or "Aria")
     raise ValueError(f"Unbekannte Voice-Engine '{engine}'. Erlaubt: say, fal.")
