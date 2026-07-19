@@ -46,6 +46,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Fertiges Video direkt aus den gerenderten broll/-Clips bauen "
                         "(keine assembly.json nötig, KEINE neuen Render-Kosten).")
     p.add_argument("--music", default=None, help="Optionale Hintergrundmusik (nur mit --auto).")
+    p.add_argument("--music-gain", type=float, default=-6.0,
+                   help="Musik-Pegel in dB (nur mit --auto). Default -6 (gut hörbar, "
+                        "da B-Roll stumm). Leiser: z. B. -12.")
     p.add_argument("--render", action="store_true",
                    help="Echt rendern statt Dry-Run (braucht ffmpeg + echte Dateien).")
     return p
@@ -65,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Automatik: fertigen Plan direkt aus gerenderten broll/-Clips bauen.
     if args.auto:
-        plan = auto_plan(day_dir, args.platform, music=args.music)
+        plan = auto_plan(day_dir, args.platform, music=args.music, music_gain_db=args.music_gain)
         if plan is None:
             print("FEHLER: Keine gerenderten Clips in broll/ gefunden. "
                   "Erst mit 'auto.py … --video' rendern.", file=sys.stderr)
