@@ -5,7 +5,12 @@ from __future__ import annotations
 import assemble
 from agency.assembly.builder import SRT_NAME, build_command, render
 from agency.assembly.plan import AssemblyPlan, Music, Segment
-from agency.assembly.scaffold import extract_subtitles, scaffold_plan, single_clip_plan
+from agency.assembly.scaffold import (
+    clips_plan,
+    extract_subtitles,
+    scaffold_plan,
+    single_clip_plan,
+)
 from agency.assembly.subtitles import _ts, build_srt
 
 
@@ -161,6 +166,14 @@ def test_single_clip_plan_with_voice():
 def test_single_clip_plan_without_voice_is_silent():
     plan = single_clip_plan("clip_01.mp4", seconds=4)
     assert plan.music is None
+
+
+def test_clips_plan_multiple_scenes_in_order():
+    plan = clips_plan(["a.mp4", "b.mp4", "c.mp4"], seconds=4, voice_path="v.mp3")
+    assert [s.source for s in plan.segments] == ["a.mp4", "b.mp4", "c.mp4"]
+    assert all(s.mute for s in plan.segments)
+    assert plan.total_duration == 12  # 3 Szenen à 4s
+    assert plan.music and plan.music.gain_db == 0.0
 
 
 def test_srt_name_has_no_leading_dot():

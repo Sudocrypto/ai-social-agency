@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 from agency.assembly.builder import ffmpeg_available, render
-from agency.assembly.scaffold import single_clip_plan
+from agency.assembly.scaffold import clips_plan
 from agency.assembly.voiceover import synthesize
 from agency.config import ROOT, load_config
 from agency.platforms import ALL_PLATFORMS
@@ -28,9 +28,10 @@ from agency.video import fal_client
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Einen freien KI-Clip rendern (+ optional Stimme).")
-    p.add_argument("--prompt", required=True, help="Bildbeschreibung für den Clip.")
-    p.add_argument("--seconds", type=int, default=4, help="Clip-Länge (fal-Minimum 4).")
+    p = argparse.ArgumentParser(description="Freie KI-Clips rendern (+ optional Stimme).")
+    p.add_argument("--prompt", required=True, action="append",
+                   help="Bildbeschreibung. Mehrfach angeben -> mehrere Szenen nacheinander.")
+    p.add_argument("--seconds", type=int, default=4, help="Länge PRO Clip (fal-Minimum 4).")
     p.add_argument("--platform", default="youtube", choices=ALL_PLATFORMS)
     p.add_argument("--config", default=None)
     p.add_argument("--voice", default=None, help="Optionaler Text, der gesprochen wird.")
@@ -50,21 +51,31 @@ def main(argv: list[str] | None = None) -> int:
 
     model = cfg.video.get("video_modell", "veo-3.1")
     secs = max(4, args.seconds)
-    est = fal_client.estimate_cost_eur(model, secs)
+    prompts = args.prompt
+    est = fal_client.estimate_cost_eur(model, secs) * len(prompts)
     outdir = Path(args.out) if args.out else (ROOT / "output" / f"clip-{time.strftime('%Y%m%d-%H%M%S')}")
     outdir.mkdir(parents=True, exist_ok=True)
 
-    print(f"🎬 Rendere Clip ({secs}s, {model}) … geschätzt ~{est:.2f} €")
-    try:
-        data = fal_client.render_clip(
-            prompt=args.prompt, seconds=secs, model=model, api_key=cfg.fal_key
-        )
-    except Exception as exc:
-        print(f"❌ Clip-Render fehlgeschlagen: {exc}", file=sys.stderr)
+    print(f"🎬 Rendere {len(prompts)} Szene(n) à {secs}s ({model}) … geschätzt ~{est:.2f} €")
+    clip_paths: list[Path] = []
+    for i, prompt in enumerate(prompts, 1):
+        print(f"   [{i}/{len(prompts)}] {prompt[:60]}…")
+        try:
+            data = fal_client.render_clip(
+                prompt=prompt, seconds=secs, model=model, api_key=cfg.fal_key
+            )
+        except Exception as exc:
+            # Abgelehnte Szene (z. B. Content-Filter) kostet nichts – überspringen.
+            print(f"      ⚠️  Szene {i} übersprungen: {exc}", file=sys.stderr)
+            continue
+        clip_path = outdir / f"clip_{i:02d}.mp4"
+        clip_path.write_bytes(data)
+        clip_paths.append(clip_path)
+        print(f"      ✓ gespeichert: {clip_path.name}")
+
+    if not clip_paths:
+        print("❌ Keine Szene wurde gerendert (alle abgelehnt/fehlgeschlagen).", file=sys.stderr)
         return 1
-    clip_path = outdir / "clip_01.mp4"
-    clip_path.write_bytes(data)
-    print(f"   Clip gespeichert: {clip_path}")
 
     voice_path: Path | None = None
     if args.voice:
@@ -78,8 +89,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"🎙  Stimme erzeugt: {voice_path}")
 
-    plan = single_clip_plan(clip_path, seconds=secs, platform_key=args.platform,
-                            voice_path=voice_path)
+    plan = clips_plan(clip_paths, seconds=secs, platform_key=args.platform,
+                      voice_path=voice_path)
     final = outdir / plan.output
     if not ffmpeg_available():
         print(f"⏹  ffmpeg fehlt – der rohe Clip liegt unter {clip_path}.")
