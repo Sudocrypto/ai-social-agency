@@ -5,13 +5,16 @@ Ein Befehl, der die ganze Kette verkettet. Macht so viel automatisch wie möglic
 und stoppt sauber, sobald etwas fehlt (FAL_KEY, ffmpeg, YouTube-OAuth) oder ein
 Sicherheits-Gate greift.
 
-⚠️ Sicherheit: Alles, was der Creative Director (NACHBESSERN) oder der
-Compliance-Prüfer (RISIKO) markiert, wird NICHT hochgeladen. Der eigentliche
-Upload passiert nur mit --post. Für Finanz-/Krypto-Content: erst voll scharf
-schalten, wenn ein Anwalt den Disclaimer/das Konzept geprüft hat.
+⚠️ Sicherheit & Kosten: Alles, was der Creative Director (NACHBESSERN) oder der
+Compliance-Prüfer (RISIKO) markiert, wird NICHT hochgeladen. Video kostet echtes
+fal.ai-Guthaben und wird deshalb NUR mit --video und NUR NACH bestandenem Gate
+gerendert – ein blockierter Lauf gibt nie Video-Geld aus. Der Upload passiert nur
+mit --post. Für Finanz-/Krypto-Content: erst voll scharf schalten, wenn ein Anwalt
+den Disclaimer/das Konzept geprüft hat.
 
-    python auto.py --config brand_config.crypto.yaml --pillar news --topic "Bitcoin ETF"
-    python auto.py --config brand_config.crypto.yaml --pillar news --topic "..." --post
+    python auto.py --config brand_config.ki.yaml --pillar tools --topic "…"           # nur Text
+    python auto.py --config brand_config.ki.yaml --pillar tools --topic "…" --video   # + KI-Video
+    python auto.py --config brand_config.ki.yaml --pillar tools --topic "…" --video --post  # + Upload
 """
 
 from __future__ import annotations
@@ -52,6 +55,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Video-Budget-Cap in EUR NUR für diesen Lauf (überschreibt Config).")
     p.add_argument("--max-clip-seconds", type=int, default=None,
                    help="Max. Clip-Länge in Sekunden NUR für diesen Lauf (überschreibt Config).")
+    p.add_argument("--video", action="store_true",
+                   help="KI-Video rendern (kostet fal.ai-Guthaben). Ohne dies nur Text/Prompts.")
     p.add_argument("--post", action="store_true",
                    help="Am Ende WIRKLICH hochladen (sonst nur bis zum fertigen Video).")
     p.add_argument("--force", action="store_true",
@@ -72,17 +77,21 @@ def main(argv: list[str] | None = None) -> int:
         cfg.video["max_clip_sekunden"] = args.max_clip_seconds
     pk = args.platform
 
-    # 1) Content generieren (mit Video-Rendern, falls FAL_KEY vorhanden) -------
+    # 1) Content generieren – IMMER ohne echtes Video-Rendern (kostet kein fal.ai-Geld).
+    # Das Video entsteht erst nach dem Gate (Schritt 3), nur mit --video.
     _log(f"[1/5] Content generieren … (Plattform: {pk})")
     ctx = RunContext(
         config=cfg, pillar=args.pillar, platform=pk, count=1,
         topic=args.topic, websearch=cfg.websearch_default and not args.no_websearch,
-        render_video=bool(cfg.fal_key), effort_override=args.effort,
+        render_video=False, effort_override=args.effort,
     )
     llm = LLM(cfg.anthropic_api_key)
     build_pipeline(llm).run(ctx)
     day_dir = write_package(ctx)
     _log(f"      Paket: {day_dir}  ·  LLM ~${ctx.total_cost_usd:.4f}")
+    if ctx.total_video_cost_eur > 0:
+        _log(f"      (Video-Schätzung ~{ctx.total_video_cost_eur:.2f}€ – noch NICHTS gerendert, "
+             "kein Geld ausgegeben. Mit --video wird nach der Freigabe gerendert.)")
 
     # Abbruch, wenn die Content-Generierung faktisch fehlgeschlagen ist (z. B. leeres
     # Anthropic-Guthaben): kein Publisher-/Director-Ergebnis -> nichts zum Freigeben.
@@ -106,21 +115,36 @@ def main(argv: list[str] | None = None) -> int:
         note = " (Tipps im director_review.md)" if gate.get("tier") == "hinweise" else ""
         _log(f"      ✅ Freigabe erteilt – Upload läuft.{note}")
 
-    # 3) KI-Video rendern -> zusammenschneiden ---------------------------------
+    # 3) KI-Video: NUR mit --video und NUR jetzt (nach bestandenem Gate) -------
+    # Erst ab hier entstehen fal.ai-Kosten – ein blockierter Lauf zahlt nie Video.
+    if not args.video:
+        _log("[3/5] ⏹  Kein Video gerendert (kein --video → kein fal.ai-Geld ausgegeben). "
+             "Text, Skript und Video-Prompts sind fertig im Paket.")
+        _log("      Für echtes KI-Video den Lauf mit --video wiederholen.")
+        return 0
     if not cfg.fal_key:
-        _log("[3/5] ⏹  Kein FAL_KEY → keine KI-Clips → kein Auto-Video. "
-             "Text/Skript sind fertig im Paket.")
+        _log("[3/5] ⏹  --video gesetzt, aber kein FAL_KEY in .env → kann nicht rendern.")
         return 0
     if not ffmpeg_available():
-        _log("[3/5] ⏹  ffmpeg nicht installiert → kann nicht schneiden. "
-             "Clips liegen unter broll/.")
+        _log("[3/5] ⏹  --video gesetzt, aber ffmpeg fehlt → kann nicht schneiden.")
         return 0
+
+    # Jetzt – nach der Freigabe – echte Clips rendern.
+    from agency.agents.video_producer import VideoProducer
+
+    ctx.render_video = True
+    ctx.video_log.clear()  # etwaige Dry-Run-Schätzung verwerfen
+    _log("[3/5] KI-Clips rendern … (kostet jetzt fal.ai-Guthaben)")
+    VideoProducer().run(ctx)
+    write_package(ctx)  # gerenderte .mp4 in broll/ persistieren
+    _log(f"      Clips gerendert · Video ~{ctx.total_video_cost_eur:.2f}€")
+
     plan = auto_plan(day_dir, pk, music=args.music)
     if plan is None:
-        _log("[3/5] ⏹  Keine gerenderten Clips gefunden – Auto-Schnitt nicht möglich.")
+        _log("      ⏹  Keine gerenderten Clips – evtl. keine VIDEO-PROMPTs oder Budget zu klein.")
         return 0
     final = day_dir / pk / plan.output
-    _log(f"[3/5] Video schneiden … ({len(plan.segments)} Segmente, ~{plan.total_duration}s)")
+    _log(f"      Video schneiden … ({len(plan.segments)} Segmente, ~{plan.total_duration}s)")
     res = render(plan, final, dry_run=False)
     if not res["ok"]:
         _log(f"      ❌ Render-Fehler: {res.get('error')}")

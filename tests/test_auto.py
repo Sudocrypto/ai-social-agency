@@ -51,6 +51,12 @@ def test_cost_override_flags_parse():
     assert d.max_budget is None and d.max_clip_seconds is None
 
 
+def test_video_is_opt_in():
+    # Standard: KEIN Video (kein fal.ai-Geld). Nur mit --video an.
+    assert auto.build_parser().parse_args(["--pillar", "tools"]).video is False
+    assert auto.build_parser().parse_args(["--pillar", "tools", "--video"]).video is True
+
+
 def _day(tmp_path, director, compliance=None):
     day = tmp_path / "2026-07-20"
     (day / "youtube").mkdir(parents=True)
