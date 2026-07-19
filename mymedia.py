@@ -16,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-from agency.assembly.builder import ffmpeg_available, render
+from agency.assembly.builder import ffmpeg_available, is_media, render
 from agency.assembly.scaffold import media_plan
 from agency.assembly.voiceover import synthesize
 from agency.config import ROOT, load_config
@@ -25,8 +25,10 @@ from agency.platforms import ALL_PLATFORMS
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Video aus eigenen Fotos/Videos bauen.")
-    p.add_argument("--media", required=True, action="append",
+    p.add_argument("--media", action="append", default=None,
                    help="Pfad zu Foto/Video. Mehrfach angeben -> Reihenfolge im Video.")
+    p.add_argument("--folder", default=None,
+                   help="Ordner mit Fotos/Videos – alle darin (alphabetisch) werden genutzt.")
     p.add_argument("--seconds", type=int, default=4, help="Dauer pro Foto/Clip-Abschnitt.")
     p.add_argument("--platform", default="youtube", choices=ALL_PLATFORMS)
     p.add_argument("--config", default=None)
@@ -43,13 +45,33 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    missing = [m for m in args.media if not Path(m).expanduser().exists()]
-    if missing:
-        print("FEHLER: Diese Dateien wurden nicht gefunden:", file=sys.stderr)
-        for m in missing:
-            print(f"  - {m}", file=sys.stderr)
+    # Quellen sammeln: einzelne --media und/oder alle Dateien aus --folder.
+    media: list[str] = []
+    if args.folder:
+        folder = Path(args.folder).expanduser()
+        if not folder.is_dir():
+            print(f"FEHLER: Ordner nicht gefunden: {folder}", file=sys.stderr)
+            return 2
+        found = sorted(p for p in folder.iterdir() if p.is_file() and is_media(p.name))
+        if not found:
+            print(f"FEHLER: Keine Fotos/Videos in {folder} gefunden.", file=sys.stderr)
+            return 2
+        media += [str(p) for p in found]
+    if args.media:
+        missing = [m for m in args.media if not Path(m).expanduser().exists()]
+        if missing:
+            print("FEHLER: Diese Dateien wurden nicht gefunden:", file=sys.stderr)
+            for m in missing:
+                print(f"  - {m}", file=sys.stderr)
+            return 2
+        media += [str(Path(m).expanduser()) for m in args.media]
+
+    if not media:
+        print("FEHLER: Gib --media <datei> (mehrfach) oder --folder <ordner> an.", file=sys.stderr)
         return 2
-    media = [str(Path(m).expanduser()) for m in args.media]
+    print(f"📂 {len(media)} Datei(en):")
+    for m in media:
+        print(f"   - {Path(m).name}")
 
     outdir = Path(args.out) if args.out else (ROOT / "output" / f"mymedia-{time.strftime('%Y%m%d-%H%M%S')}")
     outdir.mkdir(parents=True, exist_ok=True)

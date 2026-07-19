@@ -214,6 +214,24 @@ def test_mymedia_errors_on_missing_files(tmp_path, capsys):
     assert rc == 2 and "nicht gefunden" in capsys.readouterr().err
 
 
+def test_mymedia_needs_a_source(capsys):
+    rc = mymedia.main([])
+    assert rc == 2 and "--media" in capsys.readouterr().err
+
+
+def test_mymedia_folder_collects_media(tmp_path, capsys):
+    folder = tmp_path / "mats"
+    folder.mkdir()
+    (folder / "2.mp4").write_bytes(b"x")
+    (folder / "1.jpg").write_bytes(b"x")
+    (folder / "notes.txt").write_bytes(b"x")  # kein Medium -> ignoriert
+    rc = mymedia.main(["--folder", str(folder), "--out", str(tmp_path / "o")])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out
+    # alphabetisch, nur Medien: 1.jpg vor 2.mp4, notes.txt nicht dabei
+    assert "1.jpg" in out and "2.mp4" in out and "notes.txt" not in out
+
+
 def test_mymedia_dry_run_builds_plan(tmp_path, capsys):
     a = tmp_path / "a.jpg"
     a.write_bytes(b"x")

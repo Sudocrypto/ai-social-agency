@@ -21,10 +21,15 @@ SRT_NAME = "assembly_subs.srt"
 
 # Standbilder werden zu einem Clip "geloopt" (anderes ffmpeg-Input-Handling als Video).
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".heic"}
+VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi"}
 
 
 def is_image(source: str) -> bool:
     return Path(source).suffix.lower() in IMAGE_EXTS
+
+
+def is_media(source: str) -> bool:
+    return Path(source).suffix.lower() in (IMAGE_EXTS | VIDEO_EXTS)
 
 
 def ffmpeg_available() -> bool:
