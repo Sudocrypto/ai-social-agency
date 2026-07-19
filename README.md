@@ -23,6 +23,19 @@ Danach `.env` öffnen (`nano .env` oder `open -e .env`) und `ANTHROPIC_API_KEY`
 eintragen (`FAL_KEY` optional). `.env` wird nie committet, Keys stehen nur dort.
 Im aktiven venv ist `python` dann Python 3 – die Beispiele unten funktionieren.
 
+### Preflight-Check (empfohlen vor dem ersten Lauf)
+
+Prüft Keys, Pakete (`fal-client`), `ffmpeg`, Config und Video-Budget – **bevor**
+ein teurer Lauf startet, statt mittendrin zu scheitern:
+
+```bash
+python doctor.py --config brand_config.ki.yaml
+```
+
+Gibt pro Punkt ✅/⚠️/❌ mit konkretem Fix-Hinweis. Exit-Code 1 nur bei harten
+Fehlern (fehlender Key, unbekanntes Modell). Für echtes Video brauchst du
+zusätzlich `pip install fal-client` und `ffmpeg` (`brew install ffmpeg`).
+
 ## Nutzung
 
 ```bash
