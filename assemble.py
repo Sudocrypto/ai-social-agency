@@ -20,9 +20,10 @@ import sys
 from pathlib import Path
 
 from agency.assembly.builder import ffmpeg_available, render
-from agency.assembly.plan import AssemblyPlan
+from agency.assembly.plan import AssemblyPlan, Music
 from agency.assembly.scaffold import auto_plan, scaffold_plan
-from agency.config import ROOT
+from agency.assembly.voiceover import synthesize
+from agency.config import ROOT, load_config
 from agency.platforms import ALL_PLATFORMS
 
 OUTPUT_ROOT = ROOT / "output"
@@ -49,6 +50,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--music-gain", type=float, default=-6.0,
                    help="Musik-Pegel in dB (nur mit --auto). Default -6 (gut hörbar, "
                         "da B-Roll stumm). Leiser: z. B. -12.")
+    p.add_argument("--voice", default=None,
+                   help="Text, der als gesprochene Stimme über das Video gelegt wird "
+                        "(nur mit --auto). Ersetzt die Musik als Tonspur.")
+    p.add_argument("--voice-engine", default="say", choices=["say", "fal"],
+                   help="'say' = gratis macOS-Stimme (Default), 'fal' = KI-Stimme (kostet Cent).")
+    p.add_argument("--voice-name", default=None,
+                   help="Stimme: bei 'say' z. B. Anna/Markus, bei 'fal' der Voice-Name.")
     p.add_argument("--render", action="store_true",
                    help="Echt rendern statt Dry-Run (braucht ffmpeg + echte Dateien).")
     return p
@@ -73,6 +81,19 @@ def main(argv: list[str] | None = None) -> int:
             print("FEHLER: Keine gerenderten Clips in broll/ gefunden. "
                   "Erst mit 'auto.py … --video' rendern.", file=sys.stderr)
             return 2
+        # Voiceover: Text -> Sprachdatei -> als Tonspur (0 dB, voller Pegel) einsetzen.
+        if args.voice:
+            fal_key = load_config().fal_key if args.voice_engine == "fal" else None
+            suffix = "aiff" if args.voice_engine == "say" else "mp3"
+            voice_path = pdir / f"voiceover.{suffix}"
+            try:
+                synthesize(args.voice, voice_path, engine=args.voice_engine,
+                           voice=args.voice_name, api_key=fal_key)
+            except Exception as exc:
+                print(f"❌ Voiceover fehlgeschlagen: {exc}", file=sys.stderr)
+                return 1
+            print(f"🎙  Stimme erzeugt: {voice_path}")
+            plan.music = Music(source=str(voice_path), gain_db=0.0)
         out_path = Path(args.out) if args.out else (pdir / plan.output)
         return _render_and_report(plan, out_path, render_it=args.render)
 
