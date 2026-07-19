@@ -21,7 +21,7 @@ from pathlib import Path
 
 from agency.assembly.builder import ffmpeg_available, render
 from agency.assembly.plan import AssemblyPlan
-from agency.assembly.scaffold import scaffold_plan
+from agency.assembly.scaffold import auto_plan, scaffold_plan
 from agency.config import ROOT
 from agency.platforms import ALL_PLATFORMS
 
@@ -42,6 +42,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", default=None, help="Ausgabepfad (Default: <plattform>/final.mp4).")
     p.add_argument("--scaffold", action="store_true",
                    help="assembly.json (neu) aus dem Paket erzeugen und beenden.")
+    p.add_argument("--auto", action="store_true",
+                   help="Fertiges Video direkt aus den gerenderten broll/-Clips bauen "
+                        "(keine assembly.json nötig, KEINE neuen Render-Kosten).")
+    p.add_argument("--music", default=None, help="Optionale Hintergrundmusik (nur mit --auto).")
     p.add_argument("--render", action="store_true",
                    help="Echt rendern statt Dry-Run (braucht ffmpeg + echte Dateien).")
     return p
@@ -59,6 +63,16 @@ def main(argv: list[str] | None = None) -> int:
     pdir = day_dir / args.platform
     plan_path = pdir / "assembly.json"
 
+    # Automatik: fertigen Plan direkt aus gerenderten broll/-Clips bauen.
+    if args.auto:
+        plan = auto_plan(day_dir, args.platform, music=args.music)
+        if plan is None:
+            print("FEHLER: Keine gerenderten Clips in broll/ gefunden. "
+                  "Erst mit 'auto.py … --video' rendern.", file=sys.stderr)
+            return 2
+        out_path = Path(args.out) if args.out else (pdir / plan.output)
+        return _render_and_report(plan, out_path, render_it=args.render)
+
     # Scaffolding: bei --scaffold oder wenn noch kein Plan existiert.
     if args.scaffold or not plan_path.exists():
         pdir.mkdir(parents=True, exist_ok=True)
@@ -72,8 +86,12 @@ def main(argv: list[str] | None = None) -> int:
 
     plan = AssemblyPlan.load(plan_path)
     out_path = Path(args.out) if args.out else (pdir / plan.output)
+    return _render_and_report(plan, out_path, render_it=args.render)
 
-    result = render(plan, out_path, dry_run=not args.render)
+
+def _render_and_report(plan: AssemblyPlan, out_path: Path, *, render_it: bool) -> int:
+    """Rendert (oder Dry-Run) und gibt eine verständliche Meldung aus."""
+    result = render(plan, out_path, dry_run=not render_it)
 
     if not result["ok"]:
         print(f"❌ {result.get('error')}", file=sys.stderr)

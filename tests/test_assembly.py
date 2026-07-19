@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import assemble
 from agency.assembly.builder import SRT_NAME, build_command, render
 from agency.assembly.plan import AssemblyPlan, Music, Segment
 from agency.assembly.scaffold import extract_subtitles, scaffold_plan
@@ -112,3 +113,29 @@ def test_scaffold_from_package(tmp_path):
     broll_seg = next(s for s in plan.segments if s.source.endswith("clip_01.mp4"))
     assert broll_seg.mute is True                      # KI-B-Roll stumm
     assert plan.music and plan.music.source == "MUSIK.mp3"
+
+
+def test_assemble_auto_builds_from_rendered_clips(tmp_path, monkeypatch, capsys):
+    # --auto baut aus vorhandenen broll/-Clips ein Video (Dry-Run, keine Render-Kosten).
+    day = tmp_path / "2026-07-19"
+    broll = day / "youtube" / "broll"
+    broll.mkdir(parents=True)
+    (broll / "clip_01.mp4").write_bytes(b"x")
+    (broll / "clip_02.mp4").write_bytes(b"x")
+    (day / "youtube" / "post_production.md").write_text(
+        "**Untertitel-Text:**\nSatz eins. Satz zwei.\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out  # ohne --render nur Dry-Run
+
+
+def test_assemble_auto_errors_without_clips(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-19"
+    (day / "youtube").mkdir(parents=True)
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
+    assert rc == 2  # keine gerenderten Clips -> klarer Fehler
