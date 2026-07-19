@@ -131,6 +131,8 @@ def _render_and_report(plan: AssemblyPlan, out_path: Path, *, render_it: bool) -
             print(f"\nffmpeg-Kommando:\n{result['cmd']}")
         return 1
 
+    if result.get("warning"):
+        print(f"⚠️  {result['warning']}")
     if result["rendered"]:
         print(f"✅ Video gerendert: {result['output']} (~{result['duration_s']}s)")
     else:

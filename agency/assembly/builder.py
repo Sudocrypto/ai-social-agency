@@ -7,6 +7,7 @@ und Musik leiser darunter mischen.
 
 from __future__ import annotations
 
+import functools
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,6 +22,30 @@ SRT_NAME = "assembly_subs.srt"
 
 def ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
+
+
+@functools.lru_cache(maxsize=1)
+def subtitles_supported() -> bool:
+    """Ob dieses ffmpeg den 'subtitles'-Filter (libass) hat.
+
+    Manche Builds (z. B. bestimmte Homebrew-Varianten) kommen ohne libass –
+    dann fehlt der subtitles-Filter und Untertitel können nicht eingebrannt
+    werden. Ergebnis wird gecacht.
+    """
+    if not ffmpeg_available():
+        return False
+    try:
+        out = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-filters"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except Exception:
+        return False
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[1] == "subtitles":
+            return True
+    return False
 
 
 def _filtergraph(plan: AssemblyPlan, has_subs: bool) -> str:
@@ -65,9 +90,11 @@ def _filtergraph(plan: AssemblyPlan, has_subs: bool) -> str:
     return ";".join(parts)
 
 
-def build_command(plan: AssemblyPlan, out_path: Path | str) -> list[str]:
+def build_command(
+    plan: AssemblyPlan, out_path: Path | str, *, burn_subtitles: bool = True
+) -> list[str]:
     """Erzeugt das vollständige ffmpeg-Argument-Array (ohne es auszuführen)."""
-    has_subs = bool(build_srt(plan).strip())
+    has_subs = burn_subtitles and bool(build_srt(plan).strip())
     args: list[str] = ["ffmpeg", "-y"]
     for seg in plan.segments:
         args += ["-ss", str(seg.start), "-t", str(seg.duration), "-i", seg.source]
@@ -99,17 +126,27 @@ def render(plan: AssemblyPlan, out_path: Path | str, *, dry_run: bool = True) ->
     workdir = out_path.parent
     workdir.mkdir(parents=True, exist_ok=True)
     srt = build_srt(plan)
-    if srt.strip():
+    want_subs = bool(srt.strip())
+
+    # Beim echten Rendern nur einbrennen, wenn dieses ffmpeg den subtitles-Filter
+    # (libass) hat – sonst Untertitel überspringen statt komplett abzubrechen.
+    burn_subs = want_subs if dry_run else (want_subs and subtitles_supported())
+    warning = None
+    if want_subs and not burn_subs and not dry_run:
+        warning = ("ffmpeg ohne libass → Untertitel werden NICHT eingebrannt. "
+                   "Für Untertitel: ffmpeg mit libass installieren "
+                   "(brew reinstall ffmpeg).")
+    if burn_subs:
         write_srt(plan, workdir / SRT_NAME)
 
-    cmd = build_command(plan, out_path.name)  # out relativ zum workdir
+    cmd = build_command(plan, out_path.name, burn_subtitles=burn_subs)  # out relativ zum workdir
     cmd_str = " ".join(cmd)
 
     if dry_run:
         return {
             "ok": True, "rendered": False, "cmd": cmd_str,
             "output": str(out_path), "duration_s": plan.total_duration,
-            "note": "Dry-Run – nichts gerendert.",
+            "note": "Dry-Run – nichts gerendert.", "warning": warning,
         }
 
     if not ffmpeg_available():
@@ -127,4 +164,5 @@ def render(plan: AssemblyPlan, out_path: Path | str, *, dry_run: bool = True) ->
     return {
         "ok": True, "rendered": True, "cmd": cmd_str,
         "output": str(out_path), "duration_s": plan.total_duration,
+        "warning": warning,
     }

@@ -67,6 +67,14 @@ def test_build_command_structure():
     assert "libx264" in cmd and "final.mp4" in cmd
 
 
+def test_build_command_can_skip_subtitles():
+    # Wenn ffmpeg keinen subtitles-Filter hat, wird ohne Untertitel gebaut.
+    cmd = build_command(_plan(), "out.mp4", burn_subtitles=False)
+    fc = cmd[cmd.index("-filter_complex") + 1]
+    assert "subtitles" not in fc
+    assert "[vc]copy[vout]" in fc
+
+
 def test_build_command_without_music_or_subs():
     p = AssemblyPlan(segments=[Segment(source="a.mp4", start=0, end=2, mute=True)])
     cmd = build_command(p, "out.mp4")

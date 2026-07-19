@@ -149,6 +149,8 @@ def main(argv: list[str] | None = None) -> int:
     if not res["ok"]:
         _log(f"      ❌ Render-Fehler: {res.get('error')}")
         return 1
+    if res.get("warning"):
+        _log(f"      ⚠️  {res['warning']}")
     _log(f"      ✅ Video fertig: {final}")
 
     # 4) Upload (nur mit --post) ----------------------------------------------
