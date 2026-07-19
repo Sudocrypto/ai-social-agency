@@ -84,6 +84,19 @@ def scaffold_plan(
     )
 
 
+def single_clip_plan(
+    clip_path: Path | str, *,
+    seconds: float = 4.0, platform_key: str = "youtube", voice_path: Path | str | None = None,
+) -> AssemblyPlan:
+    """Render-Plan für EINEN Clip (freier Prompt-Test), optional mit Stimme als Tonspur."""
+    width, height = (1920, 1080) if platform_key == "youtube" else (1080, 1920)
+    seg = Segment(source=str(clip_path), start=0.0, end=seconds, subtitle="", mute=True)
+    music = Music(source=str(voice_path), gain_db=0.0) if voice_path else None
+    return AssemblyPlan(
+        segments=[seg], music=music, width=width, height=height, fps=30, output="final.mp4",
+    )
+
+
 def auto_plan(
     day_dir: Path, platform_key: str, *,
     music: str | None = None, music_gain_db: float = -6.0, clip_seconds: float = 5.0,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import assemble
 from agency.assembly.builder import SRT_NAME, build_command, render
 from agency.assembly.plan import AssemblyPlan, Music, Segment
-from agency.assembly.scaffold import extract_subtitles, scaffold_plan
+from agency.assembly.scaffold import extract_subtitles, scaffold_plan, single_clip_plan
 from agency.assembly.subtitles import _ts, build_srt
 
 
@@ -147,6 +147,20 @@ def test_assemble_auto_errors_without_clips(tmp_path, monkeypatch, capsys):
 
     rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
     assert rc == 2  # keine gerenderten Clips -> klarer Fehler
+
+
+def test_single_clip_plan_with_voice():
+    plan = single_clip_plan("clip_01.mp4", seconds=4, voice_path="voiceover.mp3")
+    assert len(plan.segments) == 1
+    assert plan.segments[0].source == "clip_01.mp4" and plan.segments[0].mute is True
+    assert plan.segments[0].duration == 4
+    assert plan.music and plan.music.source == "voiceover.mp3" and plan.music.gain_db == 0.0
+    assert plan.width == 1920 and plan.height == 1080  # YouTube-Querformat
+
+
+def test_single_clip_plan_without_voice_is_silent():
+    plan = single_clip_plan("clip_01.mp4", seconds=4)
+    assert plan.music is None
 
 
 def test_srt_name_has_no_leading_dot():
