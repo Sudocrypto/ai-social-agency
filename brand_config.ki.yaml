@@ -1,0 +1,73 @@
+# Marken-Vorlage: KI-Tools & KI-Tipps (faceless, sofort startbar, niedriges Risiko).
+# Nutzung:
+#   python auto.py --config brand_config.ki.yaml --pillar tools --topic "5 KI-Tools ..."
+#   python run.py  --config brand_config.ki.yaml --pillar tools --platform youtube --count 1
+#
+# Kein Finanz-/Anlagethema -> keine BaFin/Anonymitäts-Bremse. Du kannst sofort
+# posten. Einzige echte Pflicht: Affiliate/Werbung klar kennzeichnen.
+#
+# WICHTIG (deutsches Werberecht, §5a UWG): Sobald ein Tool empfohlen wird, muss
+# entweder klar "Werbung"/"Anzeige" dranstehen ODER ausdrücklich Unabhängigkeit
+# erklärt sein ("unbezahlt, keine Kooperation"). Der Disclaimer unten setzt den
+# sicheren Default: jede Tool-Nennung gilt als gekennzeichnete Werbung.
+
+# --- Marken-Identität (Name/Handle nach Wunsch ändern) ---
+brand_name: "KI Kompakt"             # -> Marken-Hashtag #KIKompakt
+handle: "@kikompakt"
+sprache: >-
+  Deutsch, schnell, direkt, nützlich – kompakte Tipps-/News-Stimme (kein Klarname
+  nötig; 'du'-Ansprache, kein Hype-Geschwätz).
+thema: "KI-Tools, KI-News und praktische KI-Tipps für Alltag und Business"
+content_pillars:
+  - "Konkrete KI-Tools vorstellen, die Zeit oder Arbeit sparen (klarer Nutzen, kurz gezeigt)"
+  - "KI-News & Updates schnell eingeordnet – was davon wirklich relevant ist"
+  - "KI-Tipps & Workflows zum Nachmachen (How-to, sofort umsetzbar)"
+zielgruppe: "Deutschsprachige, die KI praktisch nutzen wollen – Alltag, Job, Selbstständigkeit"
+tonalität: "sachlich-begeistert, ehrlich, hilfreich – kein Clickbait, keine Wundermittel-Versprechen"
+
+# --- Compliance (leicht: Transparenz + keine falschen Versprechen) ---
+compliance:
+  enabled: true
+  disclaimer: >-
+    Werbung. Dieses Video enthält Produktempfehlungen und Affiliate-Links – nutzt
+    du einen Link, unterstützt du den Kanal, für dich ohne Aufpreis. Keine Garantie
+    für bestimmte Ergebnisse; teste Tools selbst.
+  regeln:
+    - "Werbekennzeichnung IMMER unbedingt und unmissverständlich: den GESAMTEN Beitrag
+       pauschal mit dem Label 'Werbung' kennzeichnen (sicherer Default für einen
+       monetarisierten Kanal). KEINE konditionalen Formeln ('sofern eine Kooperation
+       besteht', 'ggf.', 'falls bezahlt') – die sind nach §5a UWG / MStV unzureichend."
+    - "NIEMALS behaupten, welche einzelnen Tools bezahlte Kooperationen sind (oder nicht) –
+       das weiß nur der Kanalbetreiber. Die pauschale 'Werbung'-Kennzeichnung deckt beide
+       Fälle sicher ab; keine tool-genauen Kooperations-Zuordnungen erfinden."
+    - "Keine unrealistischen Versprechen ('verdiene sofort', 'automatisch reich', 'ersetzt X komplett')."
+    - "Keine absoluten/garantierten Aussagen über Tool-Fähigkeiten ('nie', 'immer', 'garantiert',
+       '100%', 'komplett', 'keine Fehler/Halluzinationen'). Immer relativieren ('deutlich weniger',
+       'in der Regel', 'meist') – sonst irreführende Werbung (§5 UWG)."
+    - "Tool-Funktionen ehrlich darstellen – nichts erfinden, was das Tool nicht kann."
+    - "Preise/Gratis-Status nur nennen, wenn aktuell korrekt (oder 'Stand kann sich ändern')."
+    - "Keine urheberrechtlich geschützten Logos/Clips ohne Recht; eigene/lizenzfreie Visuals."
+
+# --- Modelle ---
+models:
+  director: "claude-opus-4-8"
+  default:  "claude-sonnet-5"
+model_overrides: {}
+
+# --- Effort (Kosten/Qualität) ---
+effort:
+  default: high
+  overrides:
+    seo_hashtag: low
+    community_manager: low
+    publisher: medium
+    editor: medium
+
+# --- Video (faceless: KI-B-Roll + Untertitel + Musik) ---
+video_modus: "full_synthetic"   # faceless -> vollständig KI-generierte Szenen ok
+video_modell: "seedance-2.0-fast"  # günstig fürs Volumen; veo-3.1 für Clips mit Ton
+max_clip_sekunden: 6
+max_video_budget_eur: 3.0
+
+# --- Trend-Scout ---
+websearch_default: true

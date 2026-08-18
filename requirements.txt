@@ -1,0 +1,7 @@
+anthropic>=0.69
+python-dotenv>=1.0
+PyYAML>=6.0
+
+# Für echtes KI-Video-Rendering (auto.py mit FAL_KEY / run.py --render-video).
+# Wird nur beim tatsächlichen Rendern importiert – ohne FAL_KEY bleibt alles Dry-Run.
+fal-client>=0.5

@@ -1,0 +1,296 @@
+"""Video-Assembly: Plan-I/O, SRT-Timing, ffmpeg-Kommando, Scaffold – offline."""
+
+from __future__ import annotations
+
+import assemble
+import mymedia
+from agency.assembly.builder import (
+    SRT_NAME,
+    build_command,
+    build_crossfade_command,
+    is_image,
+    render,
+)
+from agency.assembly.plan import AssemblyPlan, Music, Segment
+from agency.assembly.scaffold import (
+    clips_plan,
+    extract_subtitles,
+    media_plan,
+    scaffold_plan,
+    single_clip_plan,
+)
+from agency.assembly.subtitles import _ts, build_srt
+
+
+def _plan(**kw) -> AssemblyPlan:
+    return AssemblyPlan(
+        segments=[
+            Segment(source="a.mp4", start=0, end=4, subtitle="Hallo Welt", mute=False),
+            Segment(source="b.mp4", start=1, end=3, subtitle="Zweiter Clip", mute=True),
+        ],
+        music=Music(source="m.mp3", gain_db=-18.0),
+        **kw,
+    )
+
+
+def test_segment_duration_and_total():
+    p = _plan()
+    assert p.segments[0].duration == 4.0
+    assert p.segments[1].duration == 2.0
+    assert p.total_duration == 6.0
+
+
+def test_validate_catches_bad_plan():
+    empty = AssemblyPlan()
+    assert any("Keine Segmente" in e for e in empty.validate())
+    bad = AssemblyPlan(segments=[Segment(source="x.mp4", start=5, end=2)])
+    assert any("end" in e for e in bad.validate())
+
+
+def test_plan_roundtrip(tmp_path):
+    p = _plan(width=1920, height=1080)
+    path = p.save(tmp_path / "assembly.json")
+    loaded = AssemblyPlan.load(path)
+    assert loaded.to_dict() == p.to_dict()
+    assert loaded.music and loaded.music.source == "m.mp3"
+
+
+def test_srt_timing():
+    srt = build_srt(_plan())
+    assert "00:00:00,000 --> 00:00:04,000" in srt   # Segment 1 (4s)
+    assert "00:00:04,000 --> 00:00:06,000" in srt   # Segment 2 (2s, kumuliert)
+    assert "Hallo Welt" in srt and "Zweiter Clip" in srt
+
+
+def test_ts_format():
+    assert _ts(3661.5) == "01:01:01,500"
+
+
+def test_build_command_structure():
+    cmd = build_command(_plan(), "final.mp4")
+    assert cmd[0] == "ffmpeg"
+    # ein -i pro Segment + eins für Musik
+    assert cmd.count("-i") == 3
+    assert "-filter_complex" in cmd
+    fc = cmd[cmd.index("-filter_complex") + 1]
+    assert "concat=n=2:v=1:a=1[vc][ac]" in fc
+    assert f"subtitles=filename={SRT_NAME}" in fc  # Untertitel eingebrannt (explizit)
+    assert "anullsrc" in fc                       # stummes Segment -> Stille
+    assert "amix=inputs=2" in fc                  # Musik untergemischt
+    assert "libx264" in cmd and "final.mp4" in cmd
+
+
+def test_build_command_can_skip_subtitles():
+    # Wenn ffmpeg keinen subtitles-Filter hat, wird ohne Untertitel gebaut.
+    cmd = build_command(_plan(), "out.mp4", burn_subtitles=False)
+    fc = cmd[cmd.index("-filter_complex") + 1]
+    assert "subtitles" not in fc
+    assert "[vc]copy[vout]" in fc
+
+
+def test_build_command_without_music_or_subs():
+    p = AssemblyPlan(segments=[Segment(source="a.mp4", start=0, end=2, mute=True)])
+    cmd = build_command(p, "out.mp4")
+    fc = cmd[cmd.index("-filter_complex") + 1]
+    assert "[vc]copy[vout]" in fc     # keine Untertitel
+    assert "amix" not in fc           # keine Musik
+    assert cmd.count("-i") == 1
+
+
+def test_render_dry_run_writes_srt_but_no_video(tmp_path):
+    out = tmp_path / "final.mp4"
+    res = render(_plan(), out, dry_run=True)
+    assert res["ok"] and not res["rendered"]
+    assert res["cmd"] and "ffmpeg" in res["cmd"]
+    assert (tmp_path / SRT_NAME).exists()   # SRT zur Vorschau geschrieben
+    assert not out.exists()                 # aber kein Video gerendert
+
+
+def test_render_invalid_plan():
+    res = render(AssemblyPlan(), "x.mp4", dry_run=True)
+    assert not res["ok"] and "Keine Segmente" in res["error"]
+
+
+def test_extract_subtitles_splits_sentences():
+    md = "**Cut-Liste:**\n| 1 |\n\n**Untertitel-Text:**\nHallo. Ich bin weg! Und jetzt?\n\n**Musik:**\n- ruhig"
+    subs = extract_subtitles(md)
+    assert subs == ["Hallo.", "Ich bin weg!", "Und jetzt?"]
+
+
+def test_scaffold_from_package(tmp_path):
+    day = tmp_path / "2026-07-14"
+    pdir = day / "youtube"
+    (pdir / "broll").mkdir(parents=True)
+    (pdir / "post_production.md").write_text(
+        "**Untertitel-Text:**\nSatz eins. Satz zwei.\n", encoding="utf-8"
+    )
+    (pdir / "broll" / "clip_01.mp4").write_bytes(b"x")
+
+    plan = scaffold_plan(day, "youtube")
+    assert plan.width == 1920 and plan.height == 1080  # YouTube = Querformat
+    sources = [s.source for s in plan.segments]
+    assert "EIGENES_MATERIAL.mp4" in sources           # eigener Auftakt-Platzhalter
+    assert any(s.endswith("clip_01.mp4") for s in sources)  # generierte B-Roll übernommen
+    broll_seg = next(s for s in plan.segments if s.source.endswith("clip_01.mp4"))
+    assert broll_seg.mute is True                      # KI-B-Roll stumm
+    assert plan.music and plan.music.source == "MUSIK.mp3"
+
+
+def test_assemble_auto_builds_from_rendered_clips(tmp_path, monkeypatch, capsys):
+    # --auto baut aus vorhandenen broll/-Clips ein Video (Dry-Run, keine Render-Kosten).
+    day = tmp_path / "2026-07-19"
+    broll = day / "youtube" / "broll"
+    broll.mkdir(parents=True)
+    (broll / "clip_01.mp4").write_bytes(b"x")
+    (broll / "clip_02.mp4").write_bytes(b"x")
+    (day / "youtube" / "post_production.md").write_text(
+        "**Untertitel-Text:**\nSatz eins. Satz zwei.\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out  # ohne --render nur Dry-Run
+
+
+def test_assemble_auto_errors_without_clips(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-19"
+    (day / "youtube").mkdir(parents=True)
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    rc = assemble.main(["--platform", "youtube", "--date", "2026-07-19", "--auto"])
+    assert rc == 2  # keine gerenderten Clips -> klarer Fehler
+
+
+def test_single_clip_plan_with_voice():
+    plan = single_clip_plan("clip_01.mp4", seconds=4, voice_path="voiceover.mp3")
+    assert len(plan.segments) == 1
+    assert plan.segments[0].source == "clip_01.mp4" and plan.segments[0].mute is True
+    assert plan.segments[0].duration == 4
+    assert plan.music and plan.music.source == "voiceover.mp3" and plan.music.gain_db == 0.0
+    assert plan.width == 1920 and plan.height == 1080  # YouTube-Querformat
+
+
+def test_single_clip_plan_without_voice_is_silent():
+    plan = single_clip_plan("clip_01.mp4", seconds=4)
+    assert plan.music is None
+
+
+def test_clips_plan_multiple_scenes_in_order():
+    plan = clips_plan(["a.mp4", "b.mp4", "c.mp4"], seconds=4, voice_path="v.mp3")
+    assert [s.source for s in plan.segments] == ["a.mp4", "b.mp4", "c.mp4"]
+    assert all(s.mute for s in plan.segments)
+    assert plan.total_duration == 12  # 3 Szenen à 4s
+    assert plan.music and plan.music.gain_db == 0.0
+
+
+def test_is_image_detection():
+    assert is_image("foto.JPG") and is_image("bild.png") and is_image("x.heic")
+    assert not is_image("clip.mp4") and not is_image("video.mov")
+
+
+def test_build_command_loops_images():
+    plan = AssemblyPlan(segments=[
+        Segment(source="foto.jpg", start=0, end=4, mute=True),
+        Segment(source="clip.mp4", start=0, end=4, mute=True),
+    ])
+    cmd = build_command(plan, "out.mp4")
+    s = " ".join(cmd)
+    assert "-loop 1 -t 4 -i foto.jpg" in s      # Foto wird geloopt
+    assert "-ss 0 -t 4 -i clip.mp4" in s        # Video normal getrimmt
+
+
+def test_media_plan_photo_muted_video_keeps_audio_without_track():
+    plan = media_plan(["foto.jpg", "clip.mp4"], seconds=4)
+    photo = next(s for s in plan.segments if s.source == "foto.jpg")
+    video = next(s for s in plan.segments if s.source == "clip.mp4")
+    assert photo.mute is True                    # Foto immer stumm
+    assert video.mute is False                   # Video behält Ton (keine Stimme/Musik)
+    assert plan.music is None
+
+
+def test_media_plan_mutes_video_when_voice_present():
+    plan = media_plan(["clip.mp4"], seconds=4, voice_path="v.mp3")
+    assert plan.segments[0].mute is True         # Stimme -> Video stumm
+    assert plan.music and plan.music.gain_db == 0.0
+
+
+def test_mymedia_errors_on_missing_files(tmp_path, capsys):
+    rc = mymedia.main(["--media", str(tmp_path / "gibtsnicht.mp4")])
+    assert rc == 2 and "nicht gefunden" in capsys.readouterr().err
+
+
+def test_mymedia_needs_a_source(capsys):
+    rc = mymedia.main([])
+    assert rc == 2 and "--media" in capsys.readouterr().err
+
+
+def test_mymedia_folder_collects_media(tmp_path, capsys):
+    folder = tmp_path / "mats"
+    folder.mkdir()
+    (folder / "2.mp4").write_bytes(b"x")
+    (folder / "1.jpg").write_bytes(b"x")
+    (folder / "notes.txt").write_bytes(b"x")  # kein Medium -> ignoriert
+    rc = mymedia.main(["--folder", str(folder), "--out", str(tmp_path / "o")])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out
+    # alphabetisch, nur Medien: 1.jpg vor 2.mp4, notes.txt nicht dabei
+    assert "1.jpg" in out and "2.mp4" in out and "notes.txt" not in out
+
+
+def test_mymedia_dry_run_builds_plan(tmp_path, capsys):
+    a = tmp_path / "a.jpg"
+    a.write_bytes(b"x")
+    b = tmp_path / "b.mp4"
+    b.write_bytes(b"x")
+    rc = mymedia.main(["--media", str(a), "--media", str(b), "--out", str(tmp_path / "o")])
+    out = capsys.readouterr().out
+    assert rc == 0 and "Dry-Run" in out
+
+
+def test_crossfade_command_animates_photo_and_blends():
+    plan = AssemblyPlan(segments=[
+        Segment(source="foto.jpg", start=0, end=4, mute=True),
+        Segment(source="clip.mp4", start=0, end=4, mute=True),
+    ], music=Music(source="v.mp3", gain_db=0.0))
+    s = " ".join(build_crossfade_command(plan, "out.mp4", xfade=1.0))
+    assert "zoompan" in s                     # Foto wird animiert (Ken Burns)
+    assert "-loop 1 -t 4 -i foto.jpg" in s    # Foto als geloopter Input
+    assert "xfade=transition=fade:duration=1.0:offset=3.0" in s  # Überblendung bei 3s
+    assert "subtitles" not in s               # keine Untertitel im Crossfade-Modus
+
+
+def test_crossfade_render_dry_run_reports_shorter_total(tmp_path):
+    plan = AssemblyPlan(segments=[
+        Segment(source="a.jpg", start=0, end=4, mute=True),
+        Segment(source="b.mp4", start=0, end=4, mute=True),
+    ])
+    res = render(plan, tmp_path / "out.mp4", dry_run=True, crossfade=True, xfade=1.0)
+    assert res["ok"] and not res["rendered"]
+    assert res["duration_s"] == 7.0           # 4 + 4 - 1 Überblendung
+    assert "xfade" in res["cmd"]
+
+
+def test_srt_name_has_no_leading_dot():
+    # Führender Punkt bricht den ffmpeg-subtitles-Filter ("No option name").
+    assert not SRT_NAME.startswith(".")
+
+
+def test_assemble_reuses_existing_voice_without_recharge(tmp_path, monkeypatch, capsys):
+    day = tmp_path / "2026-07-19"
+    broll = day / "youtube" / "broll"
+    broll.mkdir(parents=True)
+    (broll / "clip_01.mp4").write_bytes(b"x")
+    (day / "youtube" / "voiceover.mp3").write_bytes(b"AUDIO")  # existiert bereits
+    monkeypatch.setattr(assemble, "OUTPUT_ROOT", tmp_path)
+
+    def boom(*a, **k):  # darf NICHT aufgerufen werden
+        raise AssertionError("synthesize hätte nicht aufgerufen werden dürfen")
+
+    monkeypatch.setattr(assemble, "synthesize", boom)
+    rc = assemble.main([
+        "--platform", "youtube", "--date", "2026-07-19", "--auto",
+        "--voice", "egal", "--voice-engine", "fal",
+    ])
+    out = capsys.readouterr().out
+    assert rc == 0 and "wiederverwendet" in out

@@ -1,0 +1,3 @@
+# Entwicklungs-/Testabhängigkeiten (nicht für den Produktivlauf nötig).
+-r requirements.txt
+pytest>=8.0

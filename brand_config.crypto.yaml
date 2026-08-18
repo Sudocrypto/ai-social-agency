@@ -1,0 +1,63 @@
+# Marken-Vorlage für Bitcoin- & Investment-Content – mit Compliance-Leitplanken.
+# Nutzung:  python run.py --config brand_config.crypto.yaml --pillar basics --platform instagram
+#
+# WICHTIG: Das senkt rechtliches Risiko, ist aber KEINE Rechtsberatung und keine
+# Garantie. Lass die Marke + Disclaimer einmal von einem Anwalt prüfen
+# (in DE/EU relevant: BaFin, MiCA, Anlageberatung/Finanzanalyse, Werbekennzeichnung).
+
+# --- Marken-Identität ---
+brand_name: "Anon Bitcoin News"      # -> Marken-Hashtag #AnonBitcoinNews
+handle: "@AnonBitcoinNews"
+sprache: >-
+  Deutsch, direkt, schnell, faktenorientiert – anonyme News-Stimme (kein Klarname,
+  kein persönlicher Ich-Bezug; 'wir'/neutral statt 'ich').
+thema: "Bitcoin- & Krypto-News – anonym, eingeordnet als Meinung/Bildung, KEINE Anlageberatung"
+content_pillars:
+  - "Aktuelle Bitcoin- & Krypto-News schnell und verständlich eingeordnet"
+  - "Markt-Updates & Ereignisse erklärt (Bildung, keine Kauf-/Verkaufssignale)"
+  - "Bitcoin-Basics, Sicherheit & Selbstverwahrung für Einsteiger"
+zielgruppe: "Deutschsprachige Krypto-Interessierte, die schnelle, eingeordnete News wollen"
+tonalität: "schnell, sachlich, meinungsstark aber neutral-faktisch, seriös trotz Hype-Thema"
+
+# --- Compliance / rechtliche Leitplanken (Kern dieser Vorlage) ---
+compliance:
+  enabled: true
+  disclaimer: >-
+    ⚠️ Keine Anlageberatung. Das ist meine persönliche Meinung und dient nur zu
+    Bildungs- und Unterhaltungszwecken. Investments – besonders Krypto – sind
+    hochriskant; du kannst dein gesamtes eingesetztes Kapital verlieren. Triff
+    Entscheidungen eigenständig, informiere dich selbst (DYOR) und ziehe im
+    Zweifel professionelle, lizenzierte Beratung hinzu.
+  regeln:
+    - "Niemals konkrete Kauf-/Verkaufsempfehlungen ('kauf X jetzt', 'verkauf Y') oder Preisziele als Gewissheit."
+    - "Keine garantierten Renditen, kein 'sicherer Gewinn', kein 'schnell reich'."
+    - "Immer als persönliche Meinung / Bildung / Unterhaltung framen – nie als Beratung oder Handlungsanweisung."
+    - "Risiken klar und ehrlich benennen (Totalverlust möglich)."
+    - "Keine Dringlichkeit/FOMO ('nur heute', 'letzte Chance', 'bevor es explodiert')."
+    - "Werbung, Affiliate-Links und Kooperationen transparent kennzeichnen (Werbung/Anzeige)."
+    - "Keine Kursmanipulation, kein Pump, keine unbelegten Behauptungen – Quellen nennen, wenn Zahlen genannt werden."
+    - "Keine absoluten/garantierten Aussagen ('nie', 'immer', 'garantiert', '100%', 'sicher') – immer relativieren, sonst irreführende Werbung (§5 UWG)."
+
+# --- Modell-Einstellungen ---
+models:
+  director: "claude-opus-4-8"
+  default:  "claude-sonnet-5"
+model_overrides: {}
+
+# --- Effort pro Agent (Kosten/Qualität) ---
+effort:
+  default: high
+  overrides:
+    seo_hashtag: low
+    community_manager: low
+    publisher: medium
+    editor: medium
+
+# --- Video-Einstellungen ---
+video_modus: "broll_only"
+video_modell: "veo-3.1"
+max_clip_sekunden: 8
+max_video_budget_eur: 5.0
+
+# --- Trend-Scout ---
+websearch_default: true

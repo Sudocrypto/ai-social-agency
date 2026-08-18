@@ -1,0 +1,25 @@
+# Secrets – niemals committen
+.env
+
+# Generierte Review-Pakete + Video-Clips
+/output/
+*.mp4
+
+# Monitoring-Daten (getrackte Videos, Reports)
+/monitoring/
+
+# Generiertes Dashboard
+dashboard.html
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
