@@ -37,6 +37,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--voice-name", default=None)
     p.add_argument("--music", default=None, help="Optionale Musikdatei (statt Stimme).")
     p.add_argument("--music-gain", type=float, default=-6.0, help="Musik-Pegel in dB.")
+    p.add_argument("--crossfade", action="store_true",
+                   help="Segmente weich überblenden (Fotos animiert/Ken-Burns) statt hart schneiden.")
+    p.add_argument("--xfade-seconds", type=float, default=1.0,
+                   help="Dauer der Überblendung in Sekunden (nur mit --crossfade).")
     p.add_argument("--out", default=None, help="Ausgabeordner (Default: output/mymedia-<zeit>).")
     p.add_argument("--render", action="store_true", help="Echt rendern statt Dry-Run.")
     return p
@@ -95,7 +99,10 @@ def main(argv: list[str] | None = None) -> int:
         voice_path=voice_path, music_path=args.music, music_gain_db=args.music_gain,
     )
     final = outdir / plan.output
-    result = render(plan, final, dry_run=not args.render)
+    # Überblendung darf nicht länger sein als das kürzeste Segment.
+    xfade = min(args.xfade_seconds, max(0.2, args.seconds * 0.8))
+    result = render(plan, final, dry_run=not args.render,
+                    crossfade=args.crossfade, xfade=xfade)
 
     if result.get("warning"):
         print(f"⚠️  {result['warning']}")

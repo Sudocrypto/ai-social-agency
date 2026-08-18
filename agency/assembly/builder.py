@@ -128,11 +128,99 @@ def build_command(
     return args
 
 
-def render(plan: AssemblyPlan, out_path: Path | str, *, dry_run: bool = True) -> dict:
+def _animated_image_chain(idx: int, dur: float, W: int, H: int, FPS: int) -> str:
+    """Ken-Burns-Zoom für ein Standbild. `trim` kappt die Überproduktion von zoompan."""
+    frames = max(1, int(round(dur * FPS)))
+    return (
+        f"[{idx}:v]scale={W*2}:{H*2}:force_original_aspect_ratio=increase,"
+        f"crop={W*2}:{H*2},"
+        f"zoompan=z='min(zoom+0.0015,1.5)':d={frames}:"
+        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS},"
+        f"trim=duration={dur},setsar=1,setpts=PTS-STARTPTS[v{idx}]"
+    )
+
+
+def _static_scale_chain(idx: int, W: int, H: int, FPS: int) -> str:
+    return (
+        f"[{idx}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,"
+        f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={FPS},setpts=PTS-STARTPTS[v{idx}]"
+    )
+
+
+def build_crossfade_command(
+    plan: AssemblyPlan, out_path: Path | str, *, xfade: float = 1.0, transition: str = "fade",
+) -> list[str]:
+    """ffmpeg-Kommando: Segmente per Crossfade überblenden, Fotos sanft zoomen.
+
+    Fotos animiert (Ken Burns), Videos normal skaliert; aufeinanderfolgende
+    Segmente werden per xfade weich überblendet. Ton = Stimme/Musik (Clip-Ton
+    entfällt in diesem Modus), sonst Stille. Keine Untertitel.
+    """
+    W, H, FPS = plan.width, plan.height, plan.fps
+    segs = plan.segments
+    n = len(segs)
+
+    args: list[str] = ["ffmpeg", "-y"]
+    for seg in segs:
+        if is_image(seg.source):
+            args += ["-loop", "1", "-t", str(seg.duration), "-i", seg.source]
+        else:
+            args += ["-ss", str(seg.start), "-t", str(seg.duration), "-i", seg.source]
+    if plan.music:
+        args += ["-i", plan.music.source]
+
+    parts: list[str] = []
+    for i, seg in enumerate(segs):
+        if is_image(seg.source):
+            parts.append(_animated_image_chain(i, seg.duration, W, H, FPS))
+        else:
+            parts.append(_static_scale_chain(i, W, H, FPS))
+
+    # xfade-Kette + Gesamtdauer.
+    if n == 1:
+        parts.append("[v0]copy[vout]")
+        total = segs[0].duration
+    else:
+        prev, cum = "v0", segs[0].duration
+        for i in range(1, n):
+            off = round(cum - xfade, 3)
+            out = "vout" if i == n - 1 else f"vx{i}"
+            parts.append(
+                f"[{prev}][v{i}]xfade=transition={transition}:duration={xfade}:offset={off}[{out}]"
+            )
+            cum = round(cum + segs[i].duration - xfade, 3)
+            prev = out
+        total = cum
+
+    music_idx = n
+    if plan.music:
+        parts.append(
+            f"[{music_idx}:a]atrim=0:{total},asetpts=PTS-STARTPTS,"
+            f"volume={plan.music.gain_db}dB[aout]"
+        )
+    else:
+        parts.append(f"anullsrc=r=44100:cl=stereo,atrim=0:{total}[aout]")
+
+    args += [
+        "-filter_complex", ";".join(parts),
+        "-map", "[vout]", "-map", "[aout]",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-r", str(FPS),
+        "-movflags", "+faststart",
+        str(out_path),
+    ]
+    return args
+
+
+def render(
+    plan: AssemblyPlan, out_path: Path | str, *,
+    dry_run: bool = True, crossfade: bool = False, xfade: float = 1.0,
+) -> dict:
     """Rendert das Video (oder simuliert im Dry-Run).
 
     Der ffmpeg-Aufruf läuft im Verzeichnis der Ausgabedatei, damit die relativ
-    referenzierte Untertitel-Datei gefunden wird.
+    referenzierte Untertitel-Datei gefunden wird. Mit crossfade=True werden
+    Segmente überblendet (Fotos animiert) statt hart aneinandergehängt.
     """
     out_path = Path(out_path)
     errors = plan.validate()
@@ -141,6 +229,25 @@ def render(plan: AssemblyPlan, out_path: Path | str, *, dry_run: bool = True) ->
 
     workdir = out_path.parent
     workdir.mkdir(parents=True, exist_ok=True)
+
+    # Crossfade-Modus: eigener Kommandobau, keine Untertitel.
+    if crossfade:
+        total = round(sum(s.duration for s in plan.segments) - max(0, len(plan.segments) - 1) * xfade, 3)
+        cmd = build_crossfade_command(plan, out_path.name, xfade=xfade)
+        cmd_str = " ".join(cmd)
+        if dry_run:
+            return {"ok": True, "rendered": False, "cmd": cmd_str,
+                    "output": str(out_path), "duration_s": total, "warning": None}
+        if not ffmpeg_available():
+            return {"ok": False, "rendered": False, "cmd": cmd_str,
+                    "error": "ffmpeg nicht gefunden. Bitte ffmpeg installieren."}
+        proc = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True)
+        if proc.returncode != 0:
+            return {"ok": False, "rendered": False, "cmd": cmd_str,
+                    "error": f"ffmpeg-Fehler (Code {proc.returncode}): {proc.stderr[-800:]}"}
+        return {"ok": True, "rendered": True, "cmd": cmd_str,
+                "output": str(out_path), "duration_s": total, "warning": None}
+
     srt = build_srt(plan)
     want_subs = bool(srt.strip())
 

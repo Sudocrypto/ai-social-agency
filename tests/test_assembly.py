@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import assemble
 import mymedia
-from agency.assembly.builder import SRT_NAME, build_command, is_image, render
+from agency.assembly.builder import (
+    SRT_NAME,
+    build_command,
+    build_crossfade_command,
+    is_image,
+    render,
+)
 from agency.assembly.plan import AssemblyPlan, Music, Segment
 from agency.assembly.scaffold import (
     clips_plan,
@@ -240,6 +246,29 @@ def test_mymedia_dry_run_builds_plan(tmp_path, capsys):
     rc = mymedia.main(["--media", str(a), "--media", str(b), "--out", str(tmp_path / "o")])
     out = capsys.readouterr().out
     assert rc == 0 and "Dry-Run" in out
+
+
+def test_crossfade_command_animates_photo_and_blends():
+    plan = AssemblyPlan(segments=[
+        Segment(source="foto.jpg", start=0, end=4, mute=True),
+        Segment(source="clip.mp4", start=0, end=4, mute=True),
+    ], music=Music(source="v.mp3", gain_db=0.0))
+    s = " ".join(build_crossfade_command(plan, "out.mp4", xfade=1.0))
+    assert "zoompan" in s                     # Foto wird animiert (Ken Burns)
+    assert "-loop 1 -t 4 -i foto.jpg" in s    # Foto als geloopter Input
+    assert "xfade=transition=fade:duration=1.0:offset=3.0" in s  # Überblendung bei 3s
+    assert "subtitles" not in s               # keine Untertitel im Crossfade-Modus
+
+
+def test_crossfade_render_dry_run_reports_shorter_total(tmp_path):
+    plan = AssemblyPlan(segments=[
+        Segment(source="a.jpg", start=0, end=4, mute=True),
+        Segment(source="b.mp4", start=0, end=4, mute=True),
+    ])
+    res = render(plan, tmp_path / "out.mp4", dry_run=True, crossfade=True, xfade=1.0)
+    assert res["ok"] and not res["rendered"]
+    assert res["duration_s"] == 7.0           # 4 + 4 - 1 Überblendung
+    assert "xfade" in res["cmd"]
 
 
 def test_srt_name_has_no_leading_dot():
